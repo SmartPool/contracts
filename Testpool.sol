@@ -1205,7 +1205,7 @@ contract Agt {
 
 contract TestPool is Ethash, Agt {
     mapping(address=>bool) public owners;    
-    string  public version = "0.0.1";
+    string  public version = "0.1.0";
     uint    public creationBlockNumber; 
     
     bool public newVersionReleased = false;
@@ -1535,7 +1535,10 @@ contract TestPool is Ethash, Agt {
         
         minersData[ msg.sender ].pendingClaim = false;
         
-        doPayment(submissionData.numShares, submissionData.difficulty, minersData[ msg.sender ].paymentAddress);
+        if( ! doPayment(submissionData.numShares, submissionData.difficulty, minersData[ msg.sender ].paymentAddress) ) {
+            // error msg is given in doPayment function
+            return 19;
+        }
         Pay( "verification completed you will be paid", 0);
         VerifyClaim( msg.sender, 0, 0 );                
         
@@ -1600,16 +1603,18 @@ contract TestPool is Ethash, Agt {
         return averageWorkPerBlock;
     }
         
-    function doPayment( uint numShares, uint difficulty, address paymentAddress ) internal {
+    function doPayment( uint numShares, uint difficulty, address paymentAddress ) internal returns(bool) {
         updateAverageWork( numShares, difficulty );
         uint payment = numShares * difficulty * budgetPerBlock / averageWorkPerBlock;
         if( payment > this.balance ){
             //ErrorLog( "cannot afford to pay", calcPayment( submissionData.numShares, submissionData.difficulty ) );
             VerifyClaim( msg.sender, 0x84000000, payment );        
-            return;
+            return false;
         }
 
         if( ! paymentAddress.send( payment ) ) throw;
+        
+        return true;
     }    
 }
 
