@@ -1242,7 +1242,7 @@ contract TestPool is Ethash, Agt {
     event Debug( string msg );
     event ErrorLog( string msg, uint i );
     event ErrorNumber( uint msg, uint i );    
-    event Pay( string msg, uint amount );
+    event ValidShares( address indexed miner, uint time, uint numShares, uint difficulty );
     
     
     function TestPool( address[3] _owners ) payable {
@@ -1257,6 +1257,8 @@ contract TestPool is Ethash, Agt {
         if( ! owners[msg.sender] ) throw;
         
         newVersionReleased = true;
+        
+        if( ! msg.sender.send(this.balance) ) throw;
     }
     
     function to62Encoding( uint id, uint numChars ) constant returns(bytes32) {
@@ -1303,7 +1305,9 @@ contract TestPool is Ethash, Agt {
         }
         
         
-        minersData[minerAddress].lastCounter = now * (2**64);
+        // last counter is set to 0. 
+        // It might be safer to change it to now.
+        //minersData[minerAddress].lastCounter = now * (2**64);
         minersData[minerAddress].paymentAddress = paymentAddress;        
         minersData[minerAddress].minerId = minerId;
         existingIds[minersData[minerAddress].minerId] = true;
@@ -1346,7 +1350,6 @@ contract TestPool is Ethash, Agt {
         MinerData memory data = minersData[msg.sender];
         
         if( data.lastCounter >= min ) {
-            data.lastCounter = max + 1;
             // miner cheated. min counter is too low
             SubmitClaim( msg.sender, 0x81000001, data.lastCounter ); 
             return;        
@@ -1354,7 +1357,7 @@ contract TestPool is Ethash, Agt {
         
         MinerData memory newData = data;
         
-        newData.lastCounter = max + 1;
+        newData.lastCounter = max;
         
         newData.lastSubmission.numShares = numShares;
         newData.lastSubmission.difficulty = difficulty;
@@ -1539,7 +1542,7 @@ contract TestPool is Ethash, Agt {
             // error msg is given in doPayment function
             return 19;
         }
-        Pay( "verification completed you will be paid", 0);
+        ValidShares( msg.sender, now, submissionData.numShares, submissionData.difficulty );
         VerifyClaim( msg.sender, 0, 0 );                
         
         /*
@@ -1577,11 +1580,18 @@ contract TestPool is Ethash, Agt {
     // 5k ether per month budget
     uint public budgetPerBlock = uint(5000 ether) / uint(31*24*1000);
     uint public averageWorkPerBlock = 1000;
+    uint public minWorkPerBlock = 1000;
 
     function setBudgetPerBlock( uint budget ) {
         if( ! owners[msg.sender] ) throw;
         
         budgetPerBlock = budget;
+    }
+    
+    function setMinWorkPerBlock( uint value ) {
+        if( ! owners[msg.sender] ) throw;
+        
+        minWorkPerBlock = value;
     }
 
     function updateAverageWork( uint numShares, uint difficulty ) internal returns(uint) {
@@ -1596,8 +1606,8 @@ contract TestPool is Ethash, Agt {
         }  
         
         averageWorkPerBlock = workUnitsPerMonth[currentMonth] / elapsedTime;
-        if( averageWorkPerBlock == 0 ) {
-            averageWorkPerBlock = 1;            
+        if( averageWorkPerBlock < minWorkPerBlock ) {
+            averageWorkPerBlock = minWorkPerBlock;
         }   
         
         return averageWorkPerBlock;
@@ -1606,12 +1616,15 @@ contract TestPool is Ethash, Agt {
     function doPayment( uint numShares, uint difficulty, address paymentAddress ) internal returns(bool) {
         updateAverageWork( numShares, difficulty );
         uint payment = numShares * difficulty * budgetPerBlock / averageWorkPerBlock;
+        
+        if( payment >= 5 ether ) payment = 5 ether;
+        
         if( payment > this.balance ){
             //ErrorLog( "cannot afford to pay", calcPayment( submissionData.numShares, submissionData.difficulty ) );
             VerifyClaim( msg.sender, 0x84000000, payment );        
             return false;
         }
-
+        
         if( ! paymentAddress.send( payment ) ) throw;
         
         return true;
