@@ -1543,87 +1543,60 @@ contract TestPool is Ethash, Agt {
             return 19;
         }
         ValidShares( msg.sender, now, submissionData.numShares, submissionData.difficulty );
-        VerifyClaim( msg.sender, 0, 0 );                
-        
-        /*
-        if( block.difficulty > 0 ) {
-            Pay( "verification completed you will be paid",
-                 3 ether * submissionData.difficulty * submissionData.numShares / block.difficulty );
-            if( ! minersData[ msg.sender ].paymentAddress.send(3 ether * submissionData.difficulty * submissionData.numShares / block.difficulty ) ) {
-                throw;
-            }
-        }
-        else {
-            Pay( "verification completed you will be paid",
-                 3 ether * submissionData.difficulty * submissionData.numShares / 100000 );
-            if( ! minersData[ msg.sender ].paymentAddress.send(3 ether * submissionData.difficulty * submissionData.numShares / 100000) ) {
-                throw;
-            }                         
-        }*/
-        
+        VerifyClaim( msg.sender, 0, 0 );                        
         
         
         return 8;
     }    
     
     
-    function() payable {
-    
-    }
     
     function getShareIndex(address sender) constant returns(uint) {
         SubmissionData submissionData = minersData[ sender ].lastSubmission;    
         return (getClaimSeed(sender) % submissionData.numShares);
     }
-    
-    mapping (uint=>uint) public workUnitsPerMonth;
-    // 5k ether per month budget
-    uint public budgetPerBlock = uint(5000 ether) / uint(31*24*1000);
-    uint public averageWorkPerBlock = 1000;
-    uint public minWorkPerBlock = 1000;
 
-    function setBudgetPerBlock( uint budget ) {
-        if( ! owners[msg.sender] ) throw;
-        
-        budgetPerBlock = budget;
-    }
-    
-    function setMinWorkPerBlock( uint value ) {
-        if( ! owners[msg.sender] ) throw;
-        
-        minWorkPerBlock = value;
+
+    uint public extraBalance;
+    uint public subsidyFactor = 2;
+
+
+    function() payable {
+        extraBalance += msg.value;
     }
 
-    function updateAverageWork( uint numShares, uint difficulty ) internal returns(uint) {
-        // hour is +-1000 blocks. this is an nice upper bound. real number is 900
-        uint currentBlock = block.number - creationBlockNumber;
-        uint currentMonth = (currentBlock / (31*24*1000)) * (31*24*1000);        
-        workUnitsPerMonth[currentMonth] += (numShares * difficulty);
+    function setSubsidy( uint factor ) {
+        if( ! owners[msg.sender] ) throw;
+        if( factor < 1 ) throw;
         
-        uint elapsedTime = 1;
-        if( currentBlock > currentMonth ) {
-            elapsedTime = currentBlock - currentMonth;
-        }  
-        
-        averageWorkPerBlock = workUnitsPerMonth[currentMonth] / elapsedTime;
-        if( averageWorkPerBlock < minWorkPerBlock ) {
-            averageWorkPerBlock = minWorkPerBlock;
-        }   
-        
-        return averageWorkPerBlock;
+        subsidyFactor = factor;
     }
         
     function doPayment( uint numShares, uint difficulty, address paymentAddress ) internal returns(bool) {
-        updateAverageWork( numShares, difficulty );
-        uint payment = numShares * difficulty * budgetPerBlock / averageWorkPerBlock;
+
+        uint blockDifficulty;
+        if( block.difficulty > 0 ) {
+            blockDifficulty = block.difficulty;
+        }
+        else { // testrpc
+            blockDifficulty = 100000;
+        }
         
-        if( payment >= 5 ether ) payment = 5 ether;
-        
+        uint payment =  (5 ether * difficulty * numShares / blockDifficulty);
+
         if( payment > this.balance ){
             //ErrorLog( "cannot afford to pay", calcPayment( submissionData.numShares, submissionData.difficulty ) );
             VerifyClaim( msg.sender, 0x84000000, payment );        
             return false;
         }
+        
+        uint extraPayment = payment * ( subsidyFactor-1 );
+        if( ( extraPayment > extraBalance ) || (payment + extraPayment) > this.balance ) {
+            extraPayment = 0;
+        }
+        
+        extraBalance -= extraPayment;
+        payment += extraPayment;
         
         if( ! paymentAddress.send( payment ) ) throw;
         
