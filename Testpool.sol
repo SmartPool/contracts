@@ -1,12 +1,12 @@
 pragma solidity ^0.4.9;
 
+//solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol 
+
+
 //import "./SHA3_512.sol";
 
 contract SHA3_512 {
     function SHA3_512() {}
-
-    event Result(uint result);
-
     
     function keccak_f(uint[25] A) constant internal returns(uint[25]) {
         uint[5] memory C;
@@ -397,9 +397,6 @@ contract Ethash is SHA3_512 {
         return result;
     }
     
-    event Log( uint result );
-
-
     struct EthashCacheOptData {
         uint[512]    merkleNodes;
         uint         fullSizeIn128Resultion;
@@ -407,12 +404,7 @@ contract Ethash is SHA3_512 {
     }
     
     mapping(uint=>EthashCacheOptData) epochData;
-    
-    function getMerkleNode( uint epoch, uint node ) constant returns(uint) {
-        return epochData[epoch].merkleNodes[node];
-    }
-    
-    
+        
     event SetEpochData( address indexed sender, uint error, uint errorInfo );    
     function setEpochData( uint epoch,
                            uint fullSizeIn128Resultion,
@@ -451,7 +443,7 @@ contract Ethash is SHA3_512 {
         return expectedRoot;
     }
 
-    event HashimotoFailed( uint x, uint y, uint z );
+
     function hashimoto( bytes32      header,
                         bytes8       nonceLe,
                         uint[]       dataSetLookup,
@@ -461,12 +453,16 @@ contract Ethash is SHA3_512 {
         uint[16] memory s;
         uint[32] memory mix;
         uint[8]  memory cmix;
+        
         uint[2]  memory depthAndFullSize = [epochData[epochIndex].branchDepth, 
                                             epochData[epochIndex].fullSizeIn128Resultion];
                 
         uint i;
         uint j;
         
+        if( depthAndFullSize[1] == 0 ) {
+            return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+        }
 
         
         s = computeS(uint(header), uint(nonceLe));
@@ -485,14 +481,12 @@ contract Ethash is SHA3_512 {
         for( i = 0 ; i < 64 ; i++ ) {
             uint p = fnv( i ^ s[0], mix[i % 32]) % depthAndFullSize[1];
             
-            //j = getMerkleLeave( epochIndex, p );
-            j  = depthAndFullSize[0];
             
-            if( computeCacheRoot( p, i, dataSetLookup,  witnessForLookup, j )  != getMerkleLeave( epochIndex, p ) ) {
+            if( computeCacheRoot( p, i, dataSetLookup,  witnessForLookup, depthAndFullSize[0] )  != getMerkleLeave( epochIndex, p ) ) {
             
                 // PoW failed
                 return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-            }        
+            }       
 
             for( j = 0 ; j < 8 ; j++ ) {
 
@@ -582,7 +576,7 @@ contract Ethash is SHA3_512 {
         
 
         uint result = computeSha3(s,cmix); 
-        Log(result);
+
         return result;
         
     }
@@ -1138,7 +1132,7 @@ contract Agt {
         uint       prevBlockHash; // 0
         uint       coinbase;      // 1
         uint       blockNumber;   // 8
-        uint       gasUsed;       // 10
+        //uint       gasUsed;       // 10
         uint       timestamp;     // 11
         bytes32    extraData;     // 12
     }
@@ -1154,7 +1148,6 @@ contract Agt {
             if( idx == 0 ) header.prevBlockHash = it.next().toUint();
             else if ( idx == 2 ) header.coinbase = it.next().toUint();
             else if ( idx == 8 ) header.blockNumber = it.next().toUint();
-            else if ( idx == 10 ) header.gasUsed = it.next().toUint();            
             else if ( idx == 11 ) header.timestamp = it.next().toUint();
             else if ( idx == 12 ) header.extraData = bytes32(it.next().toUint());
             else it.next();
@@ -1164,7 +1157,7 @@ contract Agt {
  
         return header;        
     }
-        
+            
     event VerifyAgt( string msg, uint index );
     
     struct VerifyAgtData {
@@ -1291,18 +1284,7 @@ contract TestPool is Ethash, Agt {
     mapping(address=>MinerData) minersData;
     mapping(bytes32=>bool)      public existingIds;
 
-    
-    struct EthashCacheData {
-        uint128 merkleRoot;
-        uint64  fullSizeIn128Resultion;
-        uint64  branchDepth;
-    }
-    
-    mapping(uint=>EthashCacheData) public epochData;    
-    
-    event Debug( string msg );
-    event ErrorLog( string msg, uint i );
-    event ErrorNumber( uint msg, uint i );    
+        
     event ValidShares( address indexed miner, uint time, uint numShares, uint difficulty );
     
     
@@ -1432,41 +1414,7 @@ contract TestPool is Ethash, Agt {
         
         // everything is ok
         SubmitClaim( msg.sender, 0, 0 );
-    }
-    
-    /*
-    event SetEpochData( address indexed sender, uint error, uint errorInfo );
-    function setEpochData( uint128[] merkleRoot, uint64[] fullSizeIn128Resultion, uint64[] branchDepth, uint[] epoch ) {
-        EthashCacheData memory data;
-        
-        if( ! owners[msg.sender] ) {
-            //ErrorLog( "setEpochData: only owner can set data", uint(msg.sender) );
-            SetEpochData( msg.sender, 0x82000000, uint(msg.sender) );
-            return;        
-        }
-        
-        for( uint i = 0 ; i < epoch.length ; i++ ) {
-            data.merkleRoot = merkleRoot[i];
-            data.fullSizeIn128Resultion = fullSizeIn128Resultion[i];
-            data.branchDepth = branchDepth[i];
-            
-            if( epochData[epoch[i]].merkleRoot > 0 ) {
-                //ErrorLog("epoch already set", epoch[i]);
-                SetEpochData( msg.sender, 0x82000001, epoch[i] );
-                continue;            
-            }
-            
-            epochData[epoch[i]] = data;        
-        }
-        
-        SetEpochData( msg.sender, 0, 0 );        
-    }
-    
-    function getEpochData( uint epoch ) constant returns(uint[3]) {
-        return [uint(epochData[epoch].merkleRoot),
-                uint(epochData[epoch].fullSizeIn128Resultion),
-                uint(epochData[epoch].branchDepth)];
-    }*/
+    }    
     
     event VerifyExtraData( address indexed sender, uint error, uint errorInfo );    
     function verifyExtraData( bytes32 extraData, bytes32 minerId, uint difficulty ) constant internal returns(bool) {
@@ -1546,7 +1494,6 @@ contract TestPool is Ethash, Agt {
         uint counter = header.timestamp * (2 ** 64) + nonce;
         if( counter < submissionData.min ) {
             //ErrorLog( "counter is smaller than min",counter);
-            ErrorNumber( 0x8000000c, counter );
             VerifyClaim( msg.sender, 0x84000007, counter );            
             return 4;                         
         }
