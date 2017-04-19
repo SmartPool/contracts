@@ -1377,8 +1377,8 @@ contract TestPool is Ethash, Agt {
     function getClaimSeed(address sender) constant returns(uint){
         MinerData memory data = minersData[sender];
         if( block.number > data.lastSubmission.blockNumber + 200 ) return 0;
-        if( block.number <= data.lastSubmission.blockNumber + 1 ) return 0;        
-        return uint(block.blockhash(data.lastSubmission.blockNumber + 1));
+        if( block.number <= data.lastSubmission.blockNumber + 15 ) return 0;        
+        return uint(block.blockhash(data.lastSubmission.blockNumber + 10));
     }
     
     event SubmitClaim( address indexed sender, uint error, uint errorInfo );
