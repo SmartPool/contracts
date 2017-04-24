@@ -1,0 +1,8 @@
+{
+  "contract_name": "RLP",
+  "abi": [],
+  "unlinked_binary": "0x6060604052346000575b60358060166000396000f30060606040525b60005600a165627a7a72305820d5b94ef03270b41ff7b876fe416b3bd2bedabb106ef15f481647df92cec06cbf0029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1493062060165
+}

@@ -1,0 +1,71 @@
+{
+  "contract_name": "SmartpoolVersion",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "version",
+          "type": "bytes32"
+        }
+      ],
+      "name": "updateClientVersion",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "clientVersion",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "poolContract",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "newAddress",
+          "type": "address"
+        }
+      ],
+      "name": "updatePoolContract",
+      "outputs": [],
+      "payable": false,
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "_owners",
+          "type": "address[3]"
+        }
+      ],
+      "payable": false,
+      "type": "constructor"
+    }
+  ],
+  "unlinked_binary": "0x60606040523461000057604051606080610200833981016040525b8051600160a060020a0390811660009081526002602090815260408083208054600160ff19918216811790925592860151851684528184208054841682179055818601519094168352909120805490911690911790555b505b61017e806100826000396000f300606060405263ffffffff60e060020a60003504166303e9598c8114610045578063044c1d4d1461005757806388d52ef714610076578063ff1d9dd41461009f575b610000565b34610000576100556004356100ba565b005b34610000576100646100ea565b60408051918252519081900360200190f35b34610000576100836100f0565b60408051600160a060020a039092168252519081900360200190f35b3461000057610055600160a060020a03600435166100ff565b005b600160a060020a03331660009081526002602052604090205460ff1615156100e157610000565b60018190555b50565b60015481565b600054600160a060020a031681565b600160a060020a03331660009081526002602052604090205460ff16151561012657610000565b6000805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0383161790555b505600a165627a7a723058205f532112745cd11ef0d7e11206f632fb540ee123704149f3a8c9c7b2e5e244550029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1492600562125
+}

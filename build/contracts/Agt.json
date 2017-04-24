@@ -1,0 +1,31 @@
+{
+  "contract_name": "Agt",
+  "abi": [
+    {
+      "inputs": [],
+      "payable": false,
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "msg",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "VerifyAgt",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x6060604052346000575b5b5b60358060186000396000f30060606040525b60005600a165627a7a7230582036dd8333bf3d0beb170358267710eec3dbb0812eedf5f4d8262d08e50429d1c10029",
+  "networks": {},
+  "schema_version": "0.0.5",
+  "updated_at": 1493062060163
+}

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.9;
+pragma solidity ^0.4.8;
 
 //solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol 
 
@@ -404,6 +404,17 @@ contract Ethash is SHA3_512 {
     }
     
     mapping(uint=>EthashCacheOptData) epochData;
+    
+    function getEpochData( uint epochIndex, uint nodeIndex ) constant returns(uint[3]) {
+        return [epochData[epochIndex].merkleNodes[nodeIndex],
+                epochData[epochIndex].fullSizeIn128Resultion,
+                epochData[epochIndex].branchDepth];
+    }
+    
+    function isEpochDataSet( uint epochIndex ) constant returns(bool) {
+        return epochData[epochIndex].fullSizeIn128Resultion != 0;
+    
+    }
         
     event SetEpochData( address indexed sender, uint error, uint errorInfo );    
     function setEpochData( uint epoch,
@@ -423,7 +434,7 @@ contract Ethash is SHA3_512 {
             if( epochData[epoch].merkleNodes[start+i] > 0 ) {
                 //ErrorLog("epoch already set", epoch[i]);
                 SetEpochData( msg.sender, 0x82000001, epoch * (2**128) + start + i );
-                continue;            
+                return;            
 
             } 
             epochData[epoch].merkleNodes[start+i] = merkleNodes[i];
@@ -1169,11 +1180,7 @@ contract Agt {
         uint leafCounter;        
     }
     
-    function verifyAgt( /*uint[3] root, // [0] = min, [1] = max, [2] = root hash
-                        uint[2] leafData, // [0] = hash, [1] = counter
-                        //uint   leaf32BytesHash,
-                        //uint   leafCounter,*/
-                        VerifyAgtData data,                        
+    function verifyAgt( VerifyAgtData data,
                         uint   branchIndex,
                         uint[] countersBranch,
                         uint[] hashesBranch ) constant internal returns(bool) {
@@ -1377,7 +1384,8 @@ contract TestPool is Ethash, Agt {
     function getClaimSeed(address sender) constant returns(uint){
         MinerData memory data = minersData[sender];
         if( block.number > data.lastSubmission.blockNumber + 200 ) return 0;
-        if( block.number <= data.lastSubmission.blockNumber + 15 ) return 0;        
+        if( block.number <= data.lastSubmission.blockNumber + 15 ) return 0;
+                
         return uint(block.blockhash(data.lastSubmission.blockNumber + 10));
     }
     
@@ -1452,27 +1460,16 @@ contract TestPool is Ethash, Agt {
                           uint[] augCountersBranch,
                           uint[] augHashesBranch ) returns(uint) {
                           
-        BlockHeader memory header = parseBlockHeader(rlpHeader);
         SubmissionData memory submissionData = minersData[ msg.sender ].lastSubmission;
-
-        if( getClaimSeed(msg.sender) == 0 ) {
-            //ErrorLog( "claim seed is 0", 0 );
-            VerifyClaim( msg.sender, 0x84000001, 0 );
-            return 289;        
-        }
-        
-        if( shareIndex != getShareIndex(msg.sender) ) {
-            //ErrorLog( "share index is not as expected. should be:", getShareIndex() );
-            VerifyClaim( msg.sender, 0x84000002, getShareIndex(msg.sender) );            
-            return 589;                
-        } 
-        
+ 
         if( ! minersData[ msg.sender ].pendingClaim ) {
             //ErrorLog( "there are no pending claims", 0 );
             VerifyClaim( msg.sender, 0x84000003, 0 );            
             return 189;
         }
         
+        BlockHeader memory header = parseBlockHeader(rlpHeader);
+
         // check extra data
         if( ! verifyExtraData( header.extraData,
                                minersData[ msg.sender ].minerId,
@@ -1522,16 +1519,15 @@ contract TestPool is Ethash, Agt {
             return 6;
         }
                           
-        
-        // get epoch data
-        /*
-        EthashCacheData memory eData = epochData[header.blockNumber / 30000];
-        if( eData.merkleRoot == 0 ) {
+                        
+        // check epoch data
+        if( ! isEpochDataSet( header.blockNumber / 30000 ) ) {
             //ErrorLog( "epoch data was not set",header.blockNumber / 30000);
             VerifyClaim( msg.sender, 0x8400000a, header.blockNumber / 30000 );                        
             return 77;        
-        }*/
-        
+        }
+
+
         // verify ethash
         uint ethash = hashimoto( bytes32(leafHash),
                                  bytes8(nonce),
@@ -1543,6 +1539,20 @@ contract TestPool is Ethash, Agt {
             VerifyClaim( msg.sender, 0x8400000b, ethash );            
             return 7;        
         }
+        
+        if( getClaimSeed(msg.sender) == 0 ) {
+            //ErrorLog( "claim seed is 0", 0 );
+            VerifyClaim( msg.sender, 0x84000001, 0 );
+            return 289;        
+        }
+        
+
+        if( shareIndex != getShareIndex(msg.sender) ) {
+            //ErrorLog( "share index is not as expected. should be:", getShareIndex() );
+            VerifyClaim( msg.sender, 0x84000002, getShareIndex(msg.sender) );            
+            return 589;                
+        } 
+        
         
         minersData[ msg.sender ].pendingClaim = false;
         
@@ -1562,6 +1572,11 @@ contract TestPool is Ethash, Agt {
     function getShareIndex(address sender) constant returns(uint) {
         SubmissionData submissionData = minersData[ sender ].lastSubmission;    
         return (getClaimSeed(sender) % submissionData.numShares);
+    }
+    
+    event GetShareIndexDebugForTestRPC( uint index );
+    function getShareIndexDebugForTestRPC( address sender ) {
+        GetShareIndexDebugForTestRPC(getShareIndex(sender));
     }
 
 
@@ -1587,7 +1602,7 @@ contract TestPool is Ethash, Agt {
             blockDifficulty = block.difficulty;
         }
         else { // testrpc
-            blockDifficulty = 100000;
+            blockDifficulty = 900000000;
         }
         
         uint payment =  (5 ether * difficulty * numShares / blockDifficulty);
