@@ -76,7 +76,7 @@ request.post(
 
 module.exports.mineBlocks =  function( numBlocks, dummyAccount ) {
     for( var i = 0 ; i < numBlocks ; i++ ) {
-        mineOneBlock("0xaca94ef8bd5ffee41947b4585a84bda5a3d3da6e");
+        mineOneBlock(dummyAccount);
     }
 }
 
