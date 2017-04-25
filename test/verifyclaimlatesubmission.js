@@ -6,12 +6,18 @@ var TestPool = artifacts.require("./TestPool.sol");
 
 
 ////////////////////////////////////////////////////////////////////////////////
+var pool;
+var poolAddressString = "0x07a457d878bf363e0bb5aa0b096092f941e19962";
+var shareIndex;
 
-contract('TestPool', function(accounts) {
-  var pool;
-  var poolAddressString = "0x07a457d878bf363e0bb5aa0b096092f941e19962";
-  var shareIndex;
+contract('TestPool_verifyclaimlatesubmission', function(accounts) {
   
+  beforeEach(function(done){
+    done();
+  });
+  afterEach(function(done){
+    done();
+  });
     
     
 

@@ -1,15 +1,22 @@
 const helpers = require('./helpers');
 var TestPool = artifacts.require("./TestPool.sol");
+var pool;
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-contract('TestPool', function(accounts) {
-  var pool;
-    
 
+contract('TestPool_setepoch', function(accounts) {  
+
+  beforeEach(function(done){
+    done();
+  });
+  afterEach(function(done){
+    done();
+  });
+  
   it("set epoch without authorization", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]]).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],{from:accounts[0]}).then(function(instance){
         pool = instance;
 
         return pool.setEpochData(0, 10, 10, [8], 0, 12, {from: accounts[3]}).then(function(result) {

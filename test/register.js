@@ -23,61 +23,63 @@ var checkCanRegister = function ( pool, account, canRegisterExpected ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 var checkIsAndCanRegister = function ( pool, account, isRegistered ) {
-    checkIsRegistered( pool, account, isRegistered );
-    checkCanRegister( pool, account, ! isRegistered );
+    return pool.isRegistered.call(account).then(function(result) {
+        assert.equal(result,isRegistered, "unexpected is registered value" );
+        return pool.canRegister.call(account);
+    }).then(function(result){
+        assert.equal(result,! isRegistered, "unexpected can register value" );        
+    });    
 };
 
 ////////////////////////////////////////////////////////////////////////////////
+var pool;
 
-contract('TestPool', function(accounts) {
+contract('TestPool_register', function(accounts) {
+  beforeEach(function(done){
+    done();
+  });
+  afterEach(function(done){
+    done();
+  });
+
+
   it("register with two accounts", function() {
-    var pool;
-    
-    return TestPool.deployed().then(function(instance) {
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],{from:accounts[0]}).then(function(instance){
       pool = instance;
-      checkIsAndCanRegister( pool, accounts[0],false);
+      return checkIsAndCanRegister( pool, accounts[0],false);
+    }).then(function(result){
       return pool.register(accounts[1],{from: accounts[0]});
     }).then(function(result) {
         helpers.CheckEvent( result, "Register", 0 );
-        checkIsAndCanRegister( pool, accounts[0],true);
-        
+        return checkIsAndCanRegister( pool, accounts[0],true);
+    }).then(function(result){    
         return pool.register(accounts[1],{from: accounts[1]});
     }).then(function(result) {
         helpers.CheckEvent( result, "Register", 0 );
-        checkIsAndCanRegister( pool, accounts[1],true);        
+        return checkIsAndCanRegister( pool, accounts[1],true);        
     });
   });
   
 ////////////////////////////////////////////////////////////////////////////////
   
   it("register twice", function() {
-    var pool;
     
-    return TestPool.deployed().then(function(instance) {
-      pool = instance;
-      checkIsAndCanRegister( pool, accounts[2],false);      
-      return pool.register(accounts[1],{from: accounts[2]});
-    }).then(function(result) {
+    return pool.register(accounts[1],{from: accounts[2]}).then(function(result) {
         helpers.CheckEvent( result, "Register", 0 );
-        checkIsAndCanRegister( pool, accounts[2],true);
+        return checkIsAndCanRegister( pool, accounts[2],true);
+        }).then(function(result){
         
         return pool.register(accounts[1],{from: accounts[2]});
     }).then(function(result) {
         helpers.CheckEvent( result, "Register", 0x80000000 );
-        checkIsAndCanRegister( pool, accounts[2],true);
+        return checkIsAndCanRegister( pool, accounts[2],true);
     });
   });
 
   it("register with payment address 0", function() {
-    var pool;
-    
-    return TestPool.deployed().then(function(instance) {
-      pool = instance;
-      checkIsAndCanRegister( pool, accounts[3],false);
-      return pool.register(0,{from: accounts[3]});
-    }).then(function(result) {
+    return pool.register(0,{from: accounts[3]}).then(function(result) {
         helpers.CheckEvent( result, "Register", 0x80000001 );
-        checkIsAndCanRegister( pool, accounts[3],false);
+        return checkIsAndCanRegister( pool, accounts[3],false);
     });
   });  
 });
