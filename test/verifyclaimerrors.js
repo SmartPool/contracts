@@ -1,5 +1,5 @@
 const helpers = require('./helpers');
-const inputs  = require('./inputs');
+const inputs  = require('./verifyclaiminputs');
 
 var BigNumber = require('bignumber.js');
 var TestPool = artifacts.require("./TestPool.sol");
@@ -228,6 +228,24 @@ contract('TestPool_verifyclaimerros', function(accounts) {
             assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPC", "expected getShareIndexDebugForTestRPC");
         
             shareIndex = new BigNumber(result.logs[0].args.index);
+    });
+  });
+
+  it("Verify claim with wrong share index", function() {  
+    // Sending and receiving data in JSON format using POST mothod
+    var index;
+    if( shareIndex > 0 ) index = shareIndex - 1;
+    else index = 1;
+    
+    var verifyClaimInput = inputs.getValidClaimVerificationInput(index);
+    return pool.verifyClaim(verifyClaimInput.rlpHeader,
+                            verifyClaimInput.nonce,
+                            verifyClaimInput.shareIndex,
+                            verifyClaimInput.dataSetLookup,
+                            verifyClaimInput.witnessForLookup,
+                            verifyClaimInput.augCountersBranchArray,
+                            verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );        
     });
   });
 
