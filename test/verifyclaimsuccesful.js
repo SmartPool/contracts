@@ -1,5 +1,5 @@
 const helpers = require('./helpers');
-const inputs  = require('./verifyclaiminputs');
+const inputs  = require('./verifyclaiminputsepoch26');
 
 var BigNumber = require('bignumber.js');
 var TestPool = artifacts.require("./TestPool.sol");

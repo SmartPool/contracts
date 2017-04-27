@@ -89,3 +89,89 @@ module.exports.SendEther =  function( fromAddress, toAddress, valueInEther ) {
        console.log(err); // "0x7f9fade1c0d57a7af66ab4ead7c2eb7b11a91385"
     });
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+function SubmitClaimInput( numShares, difficulty, min, max, augMerkle ) {
+    this.numShares = new BigNumber(numShares);
+    this.difficulty = new BigNumber(difficulty);
+    this.min = new BigNumber(min);
+    this.max = new BigNumber(max);
+    this.augMerkle = new BigNumber(augMerkle);
+}
+
+module.exports.SubmitClaimInput = function( numShares, difficulty, min, max, augMerkle ) {
+    return new SubmitClaimInput( numShares, difficulty, min, max, augMerkle );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+function VerifyClaimInput( rlpHeader,
+                           nonce,
+                           shareIndex,
+                           dataSetLookupArray,
+                           witnessForLookupArray,
+                           augCountersBranchArray,
+                           augHashesBranchArray ) {
+
+    this.rlpHeader = rlpHeader;
+    this.nonce = new BigNumber(nonce);
+    this.shareIndex = new BigNumber(shareIndex);
+    this.dataSetLookup = [];
+    this.witnessForLookup = [];
+    this.augHashesBranch = [];
+    this.augCountersBranchArray = [];
+
+    var i;
+    
+    for( i = 0 ; i < dataSetLookupArray.length ; i++ ) {
+        this.dataSetLookup.push(new BigNumber(dataSetLookupArray[i]));
+    }
+    for( i = 0 ; i < witnessForLookupArray.length ; i++ ) {
+        this.witnessForLookup.push(new BigNumber(witnessForLookupArray[i]));
+    }
+    for( i = 0 ; i < augHashesBranchArray.length ; i++ ) {
+        this.augHashesBranch.push(new BigNumber(augHashesBranchArray[i]));
+    }
+    for( i = 0 ; i < augCountersBranchArray.length ; i++ ) {
+        this.augCountersBranchArray.push(new BigNumber(augCountersBranchArray[i]));
+    }                                   
+}
+
+module.exports.VerifyClaimInput = function( rlpHeader,
+                                            nonce,
+                                            shareIndex,
+                                            dataSetLookupArray,
+                                            witnessForLookupArray,
+                                            augCountersBranchArray,
+                                            augHashesBranchArray ) {
+    return new VerifyClaimInput( rlpHeader,
+                                 nonce,
+                                 shareIndex,
+                                 dataSetLookupArray,
+                                 witnessForLookupArray,
+                                 augCountersBranchArray,
+                                 augHashesBranchArray );
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+function SetEpochDataInput( epoch, fullSizeIn128Resultion, branchDepth, start, numElems, merkleNodes ) {
+    this.epoch = new BigNumber(epoch);
+    this.fullSizeIn128Resultion = new BigNumber(fullSizeIn128Resultion);
+    this.branchDepth = new BigNumber(branchDepth);
+    this.start = new BigNumber(start);
+    this.numElems = new BigNumber(numElems);        
+    this.merkleNodes = [];
+    for( var i = 0 ; i < merkleNodes.length ; i++ ) {
+        this.merkleNodes.push(new BigNumber(merkleNodes[i]));
+    }
+}
+
+module.exports.SetEpochDataInput = function( epoch, fullSizeIn128Resultion, branchDepth, start, numElems, merkleNodes ) {
+    return new SetEpochDataInput( epoch, fullSizeIn128Resultion, branchDepth, start, numElems, merkleNodes );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+

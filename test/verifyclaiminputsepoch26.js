@@ -1,15 +1,8 @@
 var BigNumber = require('bignumber.js');
-
+const helper = require('./helpers');
 
 ////////////////////////////////////////////////////////////////////////////////
 
-function SubmitClaimInput( numShares, difficulty, min, max, augMerkle ) {
-    this.numShares = new BigNumber(numShares);
-    this.difficulty = new BigNumber(difficulty);
-    this.min = new BigNumber(min);
-    this.max = new BigNumber(max);
-    this.augMerkle = new BigNumber(augMerkle);
-}
 
 
 //====================Got submission======================
@@ -21,51 +14,16 @@ var augRoot = "0x635fab846bb66238f64c4df46d81297";
 
 
 module.exports.getSubmitClaimInput = function ( ) {
-    var submitClaimInput = new SubmitClaimInput( numShares,
-                                                 diff,
-                                                 augMin,
-                                                 augMax,
-                                                 augRoot );
+    var submitClaimInput = helper.SubmitClaimInput( numShares,
+                                                    diff,
+                                                    augMin,
+                                                    augMax,
+                                                    augRoot );
 
     return submitClaimInput;
 };
 
 
-////////////////////////////////////////////////////////////////////////////////
-
-function VerifyClaimInput( rlpHeader,
-                           nonce,
-                           shareIndex,
-                           dataSetLookupArray,
-                           witnessForLookupArray,
-                           augCountersBranchArray,
-                           augHashesBranchArray ) {
-
-    this.rlpHeader = rlpHeader;
-    this.nonce = new BigNumber(nonce);
-    this.shareIndex = new BigNumber(shareIndex);
-    this.dataSetLookup = [];
-    this.witnessForLookup = [];
-    this.augHashesBranch = [];
-    this.augCountersBranchArray = [];
-
-    var i;
-    
-    for( i = 0 ; i < dataSetLookupArray.length ; i++ ) {
-        this.dataSetLookup.push(new BigNumber(dataSetLookupArray[i]));
-    }
-    for( i = 0 ; i < witnessForLookupArray.length ; i++ ) {
-        this.witnessForLookup.push(new BigNumber(witnessForLookupArray[i]));
-    }
-    for( i = 0 ; i < augHashesBranchArray.length ; i++ ) {
-        this.augHashesBranch.push(new BigNumber(augHashesBranchArray[i]));
-    }
-    for( i = 0 ; i < augCountersBranchArray.length ; i++ ) {
-        this.augCountersBranchArray.push(new BigNumber(augCountersBranchArray[i]));
-    }                                   
-}
-
-////////////////////////////////////////////////////////////////////////////////
 
 //====================Got verification======================
 var rlp0 = "0xf901f4a08c17e829ba8d94bb836a4ab9362c232e6734ad962bedcdd522b7ffc44206b9bba0a2f1637b6a1987c3bb063e44efefb534f0816277d41b2555ebfafedcd426106f9407a457d878bf363e0bb5aa0b096092f941e19962a0bffad587fd88f0b1e17a842edc74c6cc2251068f572c7e35bd4fdad42b366a6ca0feab4e265ad024406d18a6e3bf9ab84294594cb9da58881020b9b14e47f5be2ca036ac24ed486cfb7838a56500153e8091ee1057eba58eed6590374ef7bbdabe75b90100000000000000400100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200002000000000000000000000000000000000000004000000000004001802000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000008000000000400000000000000000000000000000000008416c141ab830c543c8347e7c483104d148458fe146da0536d617274506f6f6c2d74595855666b5347636b665530713030303030303030";
@@ -179,13 +137,13 @@ module.exports.getValidClaimVerificationInput = function ( shareIndex ) {
     var countersBranch=[augCountersBranch0,augCountersBranch1,augCountersBranch2,augCountersBranch3,augCountersBranch4,augCountersBranch5,augCountersBranch6,augCountersBranch7,augCountersBranch8,augCountersBranch9,augCountersBranch10];
     var hashesBranch=[augHashesBranch0,augHashesBranch1,augHashesBranch2,augHashesBranch3,augHashesBranch4,augHashesBranch5,augHashesBranch6,augHashesBranch7,augHashesBranch8,augHashesBranch9,augHashesBranch10];
     
-    var verifyClaimInput = new VerifyClaimInput(rlp[shareIndex],
-                                                nonce[shareIndex],
-                                                shareIndex,
-                                                dataSetLookup[shareIndex],
-                                                witnessForLookup[shareIndex],
-                                                countersBranch[shareIndex],
-                                                hashesBranch[shareIndex]);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp[shareIndex],
+                                                   nonce[shareIndex],
+                                                   shareIndex,
+                                                   dataSetLookup[shareIndex],
+                                                   witnessForLookup[shareIndex],
+                                                   countersBranch[shareIndex],
+                                                   hashesBranch[shareIndex]);
 
     return verifyClaimInput;
 };
@@ -579,29 +537,18 @@ var startArray = [start0,start1,start2,start3,start4,start5,start6,start7];
 var numElemsArray = [numElems0,numElems1,numElems2,numElems3,numElems4,numElems5,numElems6,numElems7];
 var merkleNodesArray = [merkleNodes0,merkleNodes1,merkleNodes2,merkleNodes3,merkleNodes4,merkleNodes5,merkleNodes6,merkleNodes7]; 
 
-function SetEpochDataInput( epoch, fullSizeIn128Resultion, branchDepth, start, numElems, merkleNodes ) {
-    this.epoch = new BigNumber(epoch);
-    this.fullSizeIn128Resultion = new BigNumber(fullSizeIn128Resultion);
-    this.branchDepth = new BigNumber(branchDepth);
-    this.start = new BigNumber(start);
-    this.numElems = new BigNumber(numElems);        
-    this.merkleNodes = [];
-    for( var i = 0 ; i < merkleNodes.length ; i++ ) {
-        this.merkleNodes.push(new BigNumber(merkleNodes[i]));
-    }
-}
 
 module.exports.getNumSetEpochInputs = function ( ) {
     return 8;
 };
 
 module.exports.getSetEpochInputs = function ( index ) {
-    return new SetEpochDataInput( epochArray[index],
-                                  fullSizeIn128ResultionArray[index],
-                                  branchDepthArray[index],
-                                  startArray[index],
-                                  numElemsArray[index],
-                                  merkleNodesArray[index] );
+    return helper.SetEpochDataInput( epochArray[index],
+                                     fullSizeIn128ResultionArray[index],
+                                     branchDepthArray[index],
+                                     startArray[index],
+                                     numElemsArray[index],
+                                     merkleNodesArray[index] );
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -613,13 +560,13 @@ var rlp0Org = "0xf901f4a08c17e829ba8d94bb836a4ab9362c232e6734ad962bedcdd522b7ffc
 var rlp0BadMinerId = "0xf901f4a08c17e829ba8d94bb836a4ab9362c232e6734ad962bedcdd522b7ffc44206b9bba0a2f1637b6a1987c3bb063e44efefb534f0816277d41b2555ebfafedcd426106f9407a457d878bf363e0bb5aa0b096092f941e19962a0bffad587fd88f0b1e17a842edc74c6cc2251068f572c7e35bd4fdad42b366a6ca0feab4e265ad024406d18a6e3bf9ab84294594cb9da58881020b9b14e47f5be2ca036ac24ed486cfb7838a56500153e8091ee1057eba58eed6590374ef7bbdabe75b90100000000000000400100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200002000000000000000000000000000000000000004000000000004001802000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000008000000000400000000000000000000000000000000008416c141ab830c543c8347e7c483104d148458fe146da0536d617274506f6f6c2d74A95855666b5347636b665530713030303030303030";
 module.exports.getWrongMinderIdClaimVerificationInput = function ( ) {
     
-    var verifyClaimInput = new VerifyClaimInput(rlp0BadMinerId,
-                                                nonce0,
-                                                0,
-                                                dataSetLookup0,
-                                                witnessForLookup0,
-                                                augCountersBranch0,
-                                                augHashesBranch0);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp0BadMinerId,
+                                                   nonce0,
+                                                   0,
+                                                   dataSetLookup0,
+                                                   witnessForLookup0,
+                                                   augCountersBranch0,
+                                                   augHashesBranch0);
 
     return verifyClaimInput;
 };
@@ -628,13 +575,13 @@ module.exports.getWrongMinderIdClaimVerificationInput = function ( ) {
 var rlp0InvalidDifficulty = "0xf901f4a08c17e829ba8d94bb836a4ab9362c232e6734ad962bedcdd522b7ffc44206b9bba0a2f1637b6a1987c3bb063e44efefb534f0816277d41b2555ebfafedcd426106f9407a457d878bf363e0bb5aa0b096092f941e19962a0bffad587fd88f0b1e17a842edc74c6cc2251068f572c7e35bd4fdad42b366a6ca0feab4e265ad024406d18a6e3bf9ab84294594cb9da58881020b9b14e47f5be2ca036ac24ed486cfb7838a56500153e8091ee1057eba58eed6590374ef7bbdabe75b90100000000000000400100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200002000000000000000000000000000000000000004000000000004001802000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000008000000000400000000000000000000000000000000008416c141ab830c543c8347e7c483104d148458fe146da0536d617274506f6f6c2d74595855666b5347636b665530713030303030303031";
 module.exports.getWrongDifficultyClaimVerificationInput = function ( ) {
     
-    var verifyClaimInput = new VerifyClaimInput(rlp0InvalidDifficulty,
-                                                nonce0,
-                                                0,
-                                                dataSetLookup0,
-                                                witnessForLookup0,
-                                                augCountersBranch0,
-                                                augHashesBranch0);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp0InvalidDifficulty,
+                                                   nonce0,
+                                                   0,
+                                                   dataSetLookup0,
+                                                   witnessForLookup0,
+                                                   augCountersBranch0,
+                                                   augHashesBranch0);
 
     return verifyClaimInput;
 };
@@ -643,13 +590,13 @@ module.exports.getWrongDifficultyClaimVerificationInput = function ( ) {
 var rlp0InvalidCoinbase = "0xf901f4a08c17e829ba8d94bb836a4ab9362c232e6734ad962bedcdd522b7ffc44206b9bba0a2f1637b6a1987c3bb063e44efefb534f0816277d41b2555ebfafedcd426106f9417a457d878bf363e0bb5aa0b096092f941e19962a0bffad587fd88f0b1e17a842edc74c6cc2251068f572c7e35bd4fdad42b366a6ca0feab4e265ad024406d18a6e3bf9ab84294594cb9da58881020b9b14e47f5be2ca036ac24ed486cfb7838a56500153e8091ee1057eba58eed6590374ef7bbdabe75b90100000000000000400100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200002000000000000000000000000000000000000004000000000004001802000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000008000000000400000000000000000000000000000000008416c141ab830c543c8347e7c483104d148458fe146da0536d617274506f6f6c2d74595855666b5347636b665530713030303030303030";
 module.exports.getWrongCoinbaseClaimVerificationInput = function ( ) {
     
-    var verifyClaimInput = new VerifyClaimInput(rlp0InvalidCoinbase,
-                                                nonce0,
-                                                0,
-                                                dataSetLookup0,
-                                                witnessForLookup0,
-                                                augCountersBranch0,
-                                                augHashesBranch0);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp0InvalidCoinbase,
+                                                   nonce0,
+                                                   0,
+                                                   dataSetLookup0,
+                                                   witnessForLookup0,
+                                                   augCountersBranch0,
+                                                   augHashesBranch0);
 
     return verifyClaimInput;
 };
@@ -658,13 +605,13 @@ module.exports.getWrongCoinbaseClaimVerificationInput = function ( ) {
 var rlp0SmallCounter = "0xf901f4a08c17e829ba8d94bb836a4ab9362c232e6734ad962bedcdd522b7ffc44206b9bba0a2f1637b6a1987c3bb063e44efefb534f0816277d41b2555ebfafedcd426106f9407a457d878bf363e0bb5aa0b096092f941e19962a0bffad587fd88f0b1e17a842edc74c6cc2251068f572c7e35bd4fdad42b366a6ca0feab4e265ad024406d18a6e3bf9ab84294594cb9da58881020b9b14e47f5be2ca036ac24ed486cfb7838a56500153e8091ee1057eba58eed6590374ef7bbdabe75b90100000000000000400100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200002000000000000000000000000000000000000004000000000004001802000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000008000000000400000000000000000000000000000000008416c141ab830c543c8347e7c483104d148448fe146da0536d617274506f6f6c2d74595855666b5347636b665530713030303030303030";
 module.exports.getSmallCounterClaimVerificationInput = function ( ) {
     
-    var verifyClaimInput = new VerifyClaimInput(rlp0SmallCounter,
-                                                nonce0,
-                                                0,
-                                                dataSetLookup0,
-                                                witnessForLookup0,
-                                                augCountersBranch0,
-                                                augHashesBranch0);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp0SmallCounter,
+                                                   nonce0,
+                                                   0,
+                                                   dataSetLookup0,
+                                                   witnessForLookup0,
+                                                   augCountersBranch0,
+                                                   augHashesBranch0);
 
     return verifyClaimInput;
 };
@@ -673,13 +620,13 @@ module.exports.getSmallCounterClaimVerificationInput = function ( ) {
 var rlp0BigCounter = "0xf901f4a08c17e829ba8d94bb836a4ab9362c232e6734ad962bedcdd522b7ffc44206b9bba0a2f1637b6a1987c3bb063e44efefb534f0816277d41b2555ebfafedcd426106f9407a457d878bf363e0bb5aa0b096092f941e19962a0bffad587fd88f0b1e17a842edc74c6cc2251068f572c7e35bd4fdad42b366a6ca0feab4e265ad024406d18a6e3bf9ab84294594cb9da58881020b9b14e47f5be2ca036ac24ed486cfb7838a56500153e8091ee1057eba58eed6590374ef7bbdabe75b90100000000000000400100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200002000000000000000000000000000000000000004000000000004001802000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000008000000000400000000000000000000000000000000008416c141ab830c543c8347e7c483104d148468fe146da0536d617274506f6f6c2d74595855666b5347636b665530713030303030303030";
 module.exports.getBigCounterClaimVerificationInput = function ( ) {
     
-    var verifyClaimInput = new VerifyClaimInput(rlp0BigCounter,
-                                                nonce0,
-                                                0,
-                                                dataSetLookup0,
-                                                witnessForLookup0,
-                                                augCountersBranch0,
-                                                augHashesBranch0);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp0BigCounter,
+                                                   nonce0,
+                                                   0,
+                                                   dataSetLookup0,
+                                                   witnessForLookup0,
+                                                   augCountersBranch0,
+                                                   augHashesBranch0);
 
     return verifyClaimInput;
 };
@@ -688,13 +635,13 @@ module.exports.getBigCounterClaimVerificationInput = function ( ) {
 
 module.exports.getWrongAgtClaimVerificationInput = function ( ) {
     
-    var verifyClaimInput = new VerifyClaimInput(rlp0,
-                                                nonce0,
-                                                0,
-                                                dataSetLookup0,
-                                                witnessForLookup0,
-                                                augCountersBranch0,
-                                                augHashesBranch0);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp0,
+                                                   nonce0,
+                                                   0,
+                                                   dataSetLookup0,
+                                                   witnessForLookup0,
+                                                   augCountersBranch0,
+                                                   augHashesBranch0);
     
     verifyClaimInput.augCountersBranchArray[0] = new BigNumber(0);
     
@@ -705,13 +652,13 @@ module.exports.getWrongAgtClaimVerificationInput = function ( ) {
 
 module.exports.getWrongEthashClaimVerificationInput = function ( ) {
     
-    var verifyClaimInput = new VerifyClaimInput(rlp0,
-                                                nonce0,
-                                                0,
-                                                dataSetLookup0,
-                                                witnessForLookup0,
-                                                augCountersBranch0,
-                                                augHashesBranch0);
+    var verifyClaimInput = helper.VerifyClaimInput(rlp0,
+                                                   nonce0,
+                                                   0,
+                                                   dataSetLookup0,
+                                                   witnessForLookup0,
+                                                   augCountersBranch0,
+                                                   augHashesBranch0);
     
     verifyClaimInput.dataSetLookup[0] = new BigNumber(0);
     
