@@ -22,6 +22,17 @@ module.exports.CheckEvents = function ( result, eventStrings, expectedErrors ) {
     }    
 }
 
+////////////////////////////////////////////////////////////////////////////////
+
+module.exports.CheckNoEvents = function ( result ) {
+    assert.equal(result.logs.length, 0, "no events are expected");
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+module.exports.CheckThatThereWasAnEvents = function ( result ) {
+    assert.equal(result.logs.length, 1, "one event is expected");
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -175,3 +186,38 @@ module.exports.SetEpochDataInput = function( epoch, fullSizeIn128Resultion, bran
 
 ////////////////////////////////////////////////////////////////////////////////
 
+function VerifyAgtInput( rootHash,
+                         rootMin,
+                         rootMax,
+                         leafHash,
+                         leafCounter,
+                         branchIndex,
+                         countersBranch,
+                         hashesBranch ) { 
+    this.rootHash = rootHash;
+    this.rootMin = rootMin;
+    this.rootMax = rootMax;
+    this.leafHash = leafHash;
+    this.leafCounter = leafCounter;
+    this.branchIndex = branchIndex;    
+    this.countersBranch = countersBranch;    
+    this.hashesBranch = hashesBranch;    
+}
+
+module.exports.VerifyAgtInput = function( rootHash,
+                                          rootMin,
+                                          rootMax,
+                                          leafHash,
+                                          leafCounter,
+                                          branchIndex,
+                                          countersBranch,
+                                          hashesBranch ) {
+    return new VerifyAgtInput( rootHash,
+                               rootMin,
+                               rootMax,
+                               leafHash,
+                               leafCounter,
+                               branchIndex,
+                               countersBranch,
+                               hashesBranch );
+}

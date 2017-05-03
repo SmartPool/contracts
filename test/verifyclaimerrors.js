@@ -202,7 +202,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000009 );        
+        helpers.CheckEvents( result, ["VerifyAgt","VerifyClaim"], [0x80000009 , 0x84000009] );
     });
   });
 

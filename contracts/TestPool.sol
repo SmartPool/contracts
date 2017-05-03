@@ -1169,7 +1169,8 @@ contract Agt {
         return header;        
     }
             
-    event VerifyAgt( string msg, uint index );
+    //event VerifyAgt( string msg, uint index );
+    event VerifyAgt( uint error, uint index );    
     
     struct VerifyAgtData {
         uint rootHash;
@@ -1179,7 +1180,7 @@ contract Agt {
         uint leafHash;
         uint leafCounter;        
     }
-    
+
     function verifyAgt( VerifyAgtData data,
                         uint   branchIndex,
                         uint[] countersBranch,
@@ -1225,20 +1226,26 @@ contract Agt {
             
             if( (leftCounterMin >= leftCounterMax) || (rightCounterMin >= rightCounterMax) ) {
                 if( i > 0 ) {
-                    VerifyAgt( "counters mismatch",i);
+                    //VerifyAgt( "counters mismatch",i);
+                    VerifyAgt( 0x80000000, i );
                     return false;
                 }
                 if( leftCounterMin > leftCounterMax ) {
-                    VerifyAgt( "counters mismatch",i);                
+                    //VerifyAgt( "counters mismatch",i);
+                    VerifyAgt( 0x80000001, i );                
                     return false;
                 }
                 if( rightCounterMin > rightCounterMax ) {
-                    VerifyAgt( "counters mismatch",i);                
+                    //VerifyAgt( "counters mismatch",i);
+                    VerifyAgt( 0x80000002, i );                
                     return false;
                 }                
             }
             
-            if( leftCounterMax >= rightCounterMin ) return false;
+            if( leftCounterMax >= rightCounterMin ) {
+                VerifyAgt( 0x80000009, i );            
+                return false;
+            }
 
             min = leftCounterMin;
             max = rightCounterMax;
@@ -1247,21 +1254,43 @@ contract Agt {
         }
 
         if( min != data.rootMin ) {
-            VerifyAgt( "min does not match root min",min);                        
+            //VerifyAgt( "min does not match root min",min);
+            VerifyAgt( 0x80000003, min );                        
             return false;
         }
         if( max != data.rootMax ) {
-            VerifyAgt( "max does not match root max",max);        
+            //VerifyAgt( "max does not match root max",max);
+            VerifyAgt( 0x80000004, max );                    
             return false;
         }
         
         if( currentHash != data.rootHash ) {
-            VerifyAgt( "hash does not match root hash",currentHash);        
+            //VerifyAgt( "hash does not match root hash",currentHash);        
+            VerifyAgt( 0x80000005, currentHash );
             return false;
         }
         
         return true;
-    }     
+    }
+    
+    function verifyAgtDebugForTesting( uint rootHash,
+                                       uint rootMin,
+                                       uint rootMax,
+                                       uint leafHash,
+                                       uint leafCounter,
+                                       uint branchIndex,
+                                       uint[] countersBranch,
+                                       uint[] hashesBranch ) returns(bool) {
+                                       
+        VerifyAgtData memory data;
+        data.rootHash = rootHash;
+        data.rootMin = rootMin;
+        data.rootMax = rootMax;
+        data.leafHash = leafHash;
+        data.leafCounter = leafCounter;
+        
+        return verifyAgt( data, branchIndex, countersBranch, hashesBranch );
+    }         
 }
 
 
