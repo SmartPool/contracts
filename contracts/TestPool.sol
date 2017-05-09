@@ -1322,14 +1322,19 @@ contract TestPool is Ethash, Agt {
 
         
     event ValidShares( address indexed miner, uint time, uint numShares, uint difficulty );
+
     
+    bool public whiteListEnabled;
+    mapping(address=>bool) whiteList;
     
-    function TestPool( address[3] _owners ) payable {
+    function TestPool( address[3] _owners, bool _whiteListEnabeled ) payable {
         owners[_owners[0]] = true; 
         owners[_owners[1]] = true;
         owners[_owners[2]] = true;
         
         creationBlockNumber = block.number;
+        
+        whiteListEnabled = _whiteListEnabeled;
     }
     
     function declareNewerVersion() {
@@ -1383,6 +1388,15 @@ contract TestPool is Ethash, Agt {
             return;
         }
         
+        if( whiteListEnabled ) {
+            if( ! whiteList[ msg.sender ] ) {
+                // miner not in white list
+                Register( msg.sender, 0x80000002, uint(minerId) );
+                return;                 
+            }
+        }
+        
+        
         
         // last counter is set to 0. 
         // It might be safer to change it to now.
@@ -1399,6 +1413,10 @@ contract TestPool is Ethash, Agt {
         uint id = uint(sender) % (26+26+10)**11;
         bytes32 expectedId = to62Encoding(id,11);
         
+        if( whiteListEnabled ) {
+            if( ! whiteList[ sender ] ) return false; 
+        }
+        
         return ! existingIds[expectedId];
     }
     
@@ -1408,6 +1426,30 @@ contract TestPool is Ethash, Agt {
     
     function getMinerId(address sender) constant returns(bytes32) {
         return minersData[sender].minerId;
+    }
+
+    event UpdateWhiteList( address indexed miner, uint error, uint errorInfo, bool add );
+    
+    function updateWhiteList( address miner, bool add ) {
+        if( ! owners[ msg.sender ] ) {
+            // only owner can update list
+            UpdateWhiteList( msg.sender, 0x80000000, 0, add );
+            return;
+        }
+        if( ! whiteListEnabled ) {
+            // white list is not enabeled
+            UpdateWhiteList( msg.sender, 0x80000001, 0, add );        
+            return;
+        }
+        
+        whiteList[ miner ] = add;
+        if( ! add && isRegistered( miner ) ) {
+            // unregister
+            minersData[miner].paymentAddress = address(0);
+            existingIds[minersData[miner].minerId] = false;        
+        }
+        
+        UpdateWhiteList( msg.sender, 0, uint(miner), add );
     }
 
     function getClaimSeed(address sender) constant returns(uint){
@@ -1487,14 +1529,14 @@ contract TestPool is Ethash, Agt {
                           uint[] dataSetLookup,
                           uint[] witnessForLookup,
                           uint[] augCountersBranch,
-                          uint[] augHashesBranch ) returns(uint) {
+                          uint[] augHashesBranch ) {
                           
         SubmissionData memory submissionData = minersData[ msg.sender ].lastSubmission;
  
         if( ! minersData[ msg.sender ].pendingClaim ) {
             //ErrorLog( "there are no pending claims", 0 );
             VerifyClaim( msg.sender, 0x84000003, 0 );            
-            return 189;
+            return;
         }
         
         BlockHeader memory header = parseBlockHeader(rlpHeader);
@@ -1505,14 +1547,14 @@ contract TestPool is Ethash, Agt {
                                submissionData.difficulty ) ) {
             //ErrorLog( "extra data not as expected", uint(header.extraData) );
             VerifyClaim( msg.sender, 0x84000004, uint(header.extraData) );            
-            return 2;                               
+            return;                               
         }
         
         // check coinbase data
         if( header.coinbase != uint(this) ) {
             //ErrorLog( "coinbase not as expected", uint(header.coinbase) );
             VerifyClaim( msg.sender, 0x84000005, uint(header.coinbase) );            
-            return 3;
+            return;
         }
          
         
@@ -1521,12 +1563,12 @@ contract TestPool is Ethash, Agt {
         if( counter < submissionData.min ) {
             //ErrorLog( "counter is smaller than min",counter);
             VerifyClaim( msg.sender, 0x84000007, counter );            
-            return 4;                         
+            return;                         
         }
         if( counter > submissionData.max ) {
             //ErrorLog( "counter is smaller than max",counter);
             VerifyClaim( msg.sender, 0x84000008, counter );            
-            return 5;                         
+            return;                         
         }
         
         // verify agt
@@ -1545,7 +1587,7 @@ contract TestPool is Ethash, Agt {
                          augHashesBranch ) ) {
             //ErrorLog( "verifyAgt failed",0);
             VerifyClaim( msg.sender, 0x84000009, 0 );            
-            return 6;
+            return;
         }
                           
                         
@@ -1553,7 +1595,7 @@ contract TestPool is Ethash, Agt {
         if( ! isEpochDataSet( header.blockNumber / 30000 ) ) {
             //ErrorLog( "epoch data was not set",header.blockNumber / 30000);
             VerifyClaim( msg.sender, 0x8400000a, header.blockNumber / 30000 );                        
-            return 77;        
+            return;        
         }
 
 
@@ -1566,20 +1608,20 @@ contract TestPool is Ethash, Agt {
         if( ethash > ((2**256-1)/submissionData.difficulty )) {
             //ErrorLog( "ethash difficulty too low",ethash);
             VerifyClaim( msg.sender, 0x8400000b, ethash );            
-            return 7;        
+            return;        
         }
         
         if( getClaimSeed(msg.sender) == 0 ) {
             //ErrorLog( "claim seed is 0", 0 );
             VerifyClaim( msg.sender, 0x84000001, 0 );
-            return 289;        
+            return;        
         }
         
 
         if( shareIndex != getShareIndex(msg.sender) ) {
             //ErrorLog( "share index is not as expected. should be:", getShareIndex() );
             VerifyClaim( msg.sender, 0x84000002, getShareIndex(msg.sender) );            
-            return 589;                
+            return;                
         } 
         
         
@@ -1587,13 +1629,13 @@ contract TestPool is Ethash, Agt {
         
         if( ! doPayment(submissionData.numShares, submissionData.difficulty, minersData[ msg.sender ].paymentAddress) ) {
             // error msg is given in doPayment function
-            return 19;
+            return;
         }
         ValidShares( msg.sender, now, submissionData.numShares, submissionData.difficulty );
         VerifyClaim( msg.sender, 0, 0 );                        
         
         
-        return 8;
+        return;
     }    
     
     
@@ -1609,19 +1651,29 @@ contract TestPool is Ethash, Agt {
     }
 
 
-    uint public extraBalance;
-    uint public subsidyFactor = 2;
+    // 10000 = 100%
+    uint public uncleRate = 500; // 5%
+    // 10000 = 100%
+    uint public poolFees = 0;
 
 
+    event IncomingFunds( address sender, uint amountInWei );
     function() payable {
-        extraBalance += msg.value;
+        IncomingFunds( msg.sender, msg.value );
     }
 
-    function setSubsidy( uint factor ) {
-        if( ! owners[msg.sender] ) throw;
-        if( factor < 1 ) throw;
+    event SetUnlceRateAndFees( address indexed sender, uint error, uint errorInfo );
+    function setUnlceRateAndFees( uint _uncleRate, uint _poolFees ) {
+        if( ! owners[msg.sender] ) {
+            // only owner should change rates
+            SetUnlceRateAndFees( msg.sender, 0x80000000, 0 );
+            return;
+        }
         
-        subsidyFactor = factor;
+        uncleRate = _uncleRate;
+        poolFees = _poolFees;
+        
+        SetUnlceRateAndFees( msg.sender, 0, 0 );
     }
         
     function doPayment( uint numShares, uint difficulty, address paymentAddress ) internal returns(bool) {
@@ -1635,24 +1687,29 @@ contract TestPool is Ethash, Agt {
         }
         
         uint payment =  (5 ether * difficulty * numShares / blockDifficulty);
+        // take uncle rate into account
+        
+        // payment = payment * (1-0.25*uncleRate)
+        // uncleRate in [0,10000]
+        payment = (payment * (4*10000 - uncleRate)) / (4*10000);
+        
+        // fees
+        payment = (payment * (10000 - poolFees)) / 10000;
 
         if( payment > this.balance ){
             //ErrorLog( "cannot afford to pay", calcPayment( submissionData.numShares, submissionData.difficulty ) );
             VerifyClaim( msg.sender, 0x84000000, payment );        
             return false;
         }
-        
-        uint extraPayment = payment * ( subsidyFactor-1 );
-        if( ( extraPayment > extraBalance ) || (payment + extraPayment) > this.balance ) {
-            extraPayment = 0;
-        }
-        
-        extraBalance -= extraPayment;
-        payment += extraPayment;
-        
+                
         if( ! paymentAddress.send( payment ) ) throw;
         
         return true;
+    }
+    
+    function getPoolETHBalance( ) constant returns(uint) {
+        // debug function for testrpc
+        return this.balance;
     }    
 }
 

@@ -22,17 +22,18 @@ var checkCanRegister = function ( pool, account, canRegisterExpected ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-var checkIsAndCanRegister = function ( pool, account, isRegistered ) {
+var checkIsAndCanRegister = function ( pool, account, isRegistered, canRegister = ! isRegistered ) {
     return pool.isRegistered.call(account).then(function(result) {
         assert.equal(result,isRegistered, "unexpected is registered value" );
         return pool.canRegister.call(account);
     }).then(function(result){
-        assert.equal(result,! isRegistered, "unexpected can register value" );        
+        assert.equal(result,canRegister, "unexpected can register value" );        
     });    
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 var pool;
+var whiteListPool;
 
 contract('TestPool_register', function(accounts) {
   beforeEach(function(done){
@@ -44,7 +45,7 @@ contract('TestPool_register', function(accounts) {
 
 
   it("register with two accounts", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],{from:accounts[0]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[0]}).then(function(instance){
       pool = instance;
       return checkIsAndCanRegister( pool, accounts[0],false);
     }).then(function(result){
@@ -82,4 +83,79 @@ contract('TestPool_register', function(accounts) {
         return checkIsAndCanRegister( pool, accounts[3],false);
     });
   });  
+  
+////////////////////////////////////////////////////////////////////////////////
+
+  it("try to update white list when white list is disabled", function() {
+    return pool.updateWhiteList(accounts[0], true, {from: accounts[1]}).then(function(result) {
+        helpers.CheckEvent( result, "UpdateWhiteList", 0x80000001 );
+        return;
+    });
+  });  
+
+  
+////////////////////////////////////////////////////////////////////////////////
+
+
+  it("create pool with white list", function() {
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],true,{from:accounts[0]}).then(function(instance){
+      whiteListPool = instance;
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("add account 0 to whitelist from non-owner account", function() {
+    return whiteListPool.updateWhiteList(accounts[0], true, {from: accounts[3]}).then(function(result) {
+        helpers.CheckEvent( result, "UpdateWhiteList", 0x80000000 );
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("add account 0 to whitelist from owner account", function() {
+    return whiteListPool.updateWhiteList(accounts[0], true, {from: accounts[1]}).then(function(result) {
+        helpers.CheckEvent( result, "UpdateWhiteList", 0 );
+        return checkIsAndCanRegister( whiteListPool, accounts[0],false, true);        
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("register without premission", function() {
+    return whiteListPool.register(accounts[3],{from: accounts[3]}).then(function(result) {
+        helpers.CheckEvent( result, "Register", 0x80000002 );
+        return checkIsAndCanRegister( whiteListPool, accounts[3],false, false);
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("register with premission", function() {
+    return whiteListPool.register(accounts[3],{from: accounts[0]}).then(function(result) {
+        helpers.CheckEvent( result, "Register", 0 );
+        return checkIsAndCanRegister( whiteListPool, accounts[0],true, false);
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("blacklist account 0", function() {
+    return whiteListPool.updateWhiteList(accounts[0], false, {from: accounts[1]}).then(function(result) {
+        helpers.CheckEvent( result, "UpdateWhiteList", 0 );
+        return checkIsAndCanRegister( whiteListPool, accounts[0],false, false);        
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("register after blacklisted", function() {
+    return whiteListPool.register(accounts[0],{from: accounts[0]}).then(function(result) {
+        helpers.CheckEvent( result, "Register", 0x80000002 );
+        return checkIsAndCanRegister( whiteListPool, accounts[0],false, false);
+    });
+  });
+
+
+  
 });

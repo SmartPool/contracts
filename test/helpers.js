@@ -84,13 +84,16 @@ request.post(
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
 
 module.exports.mineBlocks =  function( numBlocks, dummyAccount ) {
     for( var i = 0 ; i < numBlocks ; i++ ) {
         mineOneBlock(dummyAccount);
     }
-}
+};
 
+
+////////////////////////////////////////////////////////////////////////////////
 
 module.exports.SendEther =  function( fromAddress, toAddress, valueInEther ) {
     var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
@@ -99,7 +102,14 @@ module.exports.SendEther =  function( fromAddress, toAddress, valueInEther ) {
     if (err)
        console.log(err); // "0x7f9fade1c0d57a7af66ab4ead7c2eb7b11a91385"
     });
-}
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+module.exports.GetBalance =  function( address, callback ) {
+    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    web3.eth.getBalance(address, callback);    
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -182,7 +192,7 @@ function SetEpochDataInput( epoch, fullSizeIn128Resultion, branchDepth, start, n
 
 module.exports.SetEpochDataInput = function( epoch, fullSizeIn128Resultion, branchDepth, start, numElems, merkleNodes ) {
     return new SetEpochDataInput( epoch, fullSizeIn128Resultion, branchDepth, start, numElems, merkleNodes );
-}
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -220,4 +230,18 @@ module.exports.VerifyAgtInput = function( rootHash,
                                branchIndex,
                                countersBranch,
                                hashesBranch );
-}
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+module.exports.ExpectedPayment = function( numShares, shareDifficulty, networkDifficulty, uncleRate, poolFee ) {
+    var etherPayment = (5.0 * numShares * shareDifficulty) / networkDifficulty;
+    etherPayment = etherPayment * (1-0.25*uncleRate);
+    etherPayment = etherPayment * (1-poolFee);
+    
+    return web3.toWei(new BigNumber(etherPayment.toString()), "ether");
+};
+
+////////////////////////////////////////////////////////////////////////////////
+
+

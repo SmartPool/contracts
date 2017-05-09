@@ -17,7 +17,7 @@ contract('TestPool_submit', function(accounts) {
 
 
   it("submit without register", function() {    
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],{from:accounts[0]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[0]}).then(function(instance){
       pool = instance;
       return pool.submitClaim(7, 7, 7, 8, 9,{from: accounts[0]});
     }).then(function(result) {
