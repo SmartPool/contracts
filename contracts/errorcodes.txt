@@ -1,0 +1,54 @@
+array = 
+{ 
+  {0x82000000, "setEpochData", "only owner can set data", "msg.sender"},
+  {0x82000001, "setEpochData", "epoch already set", "epoch number" },
+
+  {0x80000000, "register", "miner id is already in use", "miner id"},
+  {0x80000001, "register", "payment address 0 is forbiden" , nil},
+  {0x80000002, "register", "miner is not in white list" , nil},
+
+
+  {0x82000000, "UpdateWhiteList", "only owner can update list", "msg.sender"},
+  {0x82000001, "UpdateWhiteList", "white list is not enabled in this pool", nil},
+
+
+  {0x81000000, "submitClaim", "miner is not registered", nil},
+  {0x81000001, "submitClaim", "min counter is too low", "last submission counter value"}
+
+  {0x80000000, "SetUnlceRateAndFees", "only owner can update uncle rate and fees", "msg.sender"},
+
+
+
+  {0x84000000, "verifyClaim", "contract balance is too low to pay", "payment"},
+  {0x84000003, "verifyClaim", "there are no pending claims", nil },
+  {0x84000004, "verifyClaim", "extra data not as expected", "extra data" },
+  {0x84000005, "verifyClaim", "coinbase not as expected", "coinbase" },
+  {0x84000007, "verifyClaim", "counter is smaller than min", "counter" },
+  {0x84000008, "verifyClaim", "counter is smaller than max", "counter" }, 
+  {0x84000009, "verifyClaim", "verification of augmented merkle tree failed", nil },
+  {0x8400000a, "verifyClaim", "epoch data was not set", "epoch number" },
+  {0x8400000b, "verifyClaim", "ethash difficulty too low (or hashimoto verification failed)", "computed ethash value" },
+  {0x84000001, "verifyClaim", "claim seed is 0", nil}, 
+  {0x84000002, "verifyClaim", "share index is not as expected", "expected index"},
+
+  {0x83000000, "verifyExtraData", "miner id not as expected", "miner id"},
+  {0x83000001, "verifyExtraData", "difficulty is not as expected", "encoded difficulty"},
+};
+
+
+
+
+
+
+
+function print_error( bigInt error, bigInt errorInfo, ){
+	for( uint i = 0 ; i < array_size; i++ ) {
+		if( array[i].error == error ) {
+			printf( "%s failed: %s.", array[i].function, array[i].error_msg );
+			if( array[i].errorInfo_meaning != nil ) {
+				printf( "%s is 0x%064x", array[i].errorInfo_meaning, errorInfo );
+			}
+			printf( "\n" );
+	}
+}
+  
