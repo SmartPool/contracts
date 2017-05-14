@@ -1293,28 +1293,217 @@ contract Agt {
     }         
 }
 
+contract WeightedSubmission {
+    function WeightedSubmission(){}
+    
+    struct SingleSubmissionData {
+        uint128 numShares;
+        uint128 totalWork;
+        uint128 totalPreviousWork;
+        uint128 min;
+        uint128 max;
+        uint128 augRoot;
+    }
+    
+    struct SubmissionMetaData {
+        uint64  numPendingSubmissions;
+        uint64  lastSubmissionBlockNumber;        
+        uint128 totalWork;
+        uint128 difficulty;
+        uint128 lastCounter;
+        
+        uint64  numSubmittedShares;
+        uint64  readyForVerification; // suppose to be bool
+        
+    }
+    
+    mapping(address=>SubmissionMetaData) submissionsMetaData;
+    
+    // (user, submission number)=>data
+    mapping(address=>mapping(uint=>SingleSubmissionData)) submissionsData;
+    
+    event SubmitClaim( address indexed sender, uint error, uint errorInfo );
+    function submitClaim( uint numShares, uint difficulty, uint min, uint max, uint augRoot, bool lastClaimBeforeVerification ) {
+        SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
+        
+        if( metaData.lastCounter >= min ) {
+            // miner cheated. min counter is too low
+            SubmitClaim( msg.sender, 0x81000001, metaData.lastCounter ); 
+            return;        
+        }
+        
+        if( metaData.readyForVerification > 0 ) {
+            // miner cheated - should go verification first
+            SubmitClaim( msg.sender, 0x81000002, 0 ); 
+            return;
+        }
+        
+        if( metaData.numPendingSubmissions > 0 ) {
+            if( metaData.difficulty != difficulty ) {
+                // could not change difficulty before verification
+                SubmitClaim( msg.sender, 0x81000003, metaData.difficulty ); 
+                return;            
+            }
+        }
 
-contract TestPool is Ethash, Agt {    
+        SingleSubmissionData memory submissionData;
+        
+        submissionData.numShares = uint64(numShares);
+        if( block.difficulty > 0 ) {
+            submissionData.totalWork = uint128(numShares * block.difficulty);
+        }
+        else {
+            // test rpc
+            submissionData.totalWork = uint128(numShares * 900000000);            
+        }
+        
+        submissionData.totalPreviousWork = metaData.totalWork;
+        submissionData.min = uint128(min);
+        submissionData.max = uint128(max);
+        submissionData.augRoot = uint128(augRoot);
+        
+        (submissionsData[msg.sender])[metaData.numPendingSubmissions] = submissionData;
+        
+        // update meta data
+        metaData.numPendingSubmissions++;
+        metaData.numSubmittedShares += uint64(numShares);
+        metaData.lastSubmissionBlockNumber = uint64(block.number);
+        metaData.totalWork += submissionData.totalWork;
+        metaData.difficulty = uint128(difficulty);
+        metaData.lastCounter = uint128(max);
+        metaData.readyForVerification = lastClaimBeforeVerification ? uint64(0) : uint64(1);
+        
+        submissionsMetaData[msg.sender] = metaData;
+        
+        // everything is ok
+        SubmitClaim( msg.sender, 0, 0 );        
+    }
+
+    function getClaimSeed(address sender) constant returns(uint){
+        SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
+        if( metaData.readyForVerification == 0 ) return 0;
+        
+        uint lastBlockNumber = uint(metaData.lastSubmissionBlockNumber);
+        
+        if( block.number > lastBlockNumber + 200 ) return 0;
+        if( block.number <= lastBlockNumber + 15 ) return 0;
+                
+        return uint(block.blockhash(lastBlockNumber + 10));
+    }
+
+    function verifySubmissionIndex( address sender, uint seed, uint submissionNumber, uint shareIndex ) constant returns(bool) {
+        uint totalWork = uint(submissionsMetaData[msg.sender].totalWork);
+        uint numPendingSubmissions = uint(submissionsMetaData[msg.sender].numPendingSubmissions);
+
+        SingleSubmissionData memory submissionData = (submissionsData[sender])[submissionNumber];        
+        
+        if( submissionNumber >= numPendingSubmissions ) return false;
+        
+        uint seed1 = seed & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+        uint seed2 = seed / (2**128);
+        
+        uint selectedWork = totalWork % seed1;
+        if( uint(submissionData.totalPreviousWork) >= selectedWork ) return false;
+        if( uint(submissionData.totalPreviousWork + submissionData.totalWork) < selectedWork ) return false;  
+
+        uint expectedShareshareIndex = uint64(submissionData.numShares) % seed2;
+        if( expectedShareshareIndex != shareIndex ) return false;
+        
+        return true;
+    }
+    
+    function calculateSubmissionIndex( address sender, uint seed ) constant returns(uint[2]) {
+        // this function should be executed off chain - hene, it is not optimized
+        uint seed1 = seed & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+        uint seed2 = seed / (2**128);
+
+        uint totalWork = uint(submissionsMetaData[msg.sender].totalWork);
+        uint numPendingSubmissions = uint(submissionsMetaData[msg.sender].numPendingSubmissions);
+
+        uint selectedWork = totalWork % seed1;
+        
+        SingleSubmissionData memory submissionData;        
+        
+        for( uint submissionInd = 0 ; submissionInd < numPendingSubmissions ; submissionInd++ ) {
+            submissionData = (submissionsData[sender])[submissionInd];        
+            if( ( uint(submissionData.totalPreviousWork) < selectedWork ) &&
+                ( uint(submissionData.totalPreviousWork + submissionData.totalWork) >= selectedWork ) ) break;  
+        }
+        
+        // unexpected error
+        if( submissionInd == numPendingSubmissions ) return [uint(0xFFFFFFFFFFFFFFFF),0xFFFFFFFFFFFFFFFF];
+
+        uint shareIndex = uint(submissionData.numShares) % seed2; 
+        
+        return [submissionInd, shareIndex];
+    }
+    
+    function getAverageDifficulty( address sender ) constant returns(uint) {
+        return uint(submissionsMetaData[msg.sender].totalWork) / uint(submissionsMetaData[msg.sender].numSubmittedShares);
+    }
+    
+    // should be called only from verify claim
+    function closeSubmission( address sender ) internal {
+        SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
+        metaData.numPendingSubmissions = 0;
+        metaData.totalWork = 0;
+        metaData.numSubmittedShares = 0;
+        metaData.readyForVerification = 0;
+        
+        // last counter must not be reset
+        // last submission block number and difficulty are also kept, but it is not a must
+        // only to save some gas        
+    }
+    
+    struct SubmissionDataForClaimVerification {
+        uint lastCounter;
+        uint numShares;
+        uint shareDifficulty;
+        uint averageBlockDifficulty;
+        uint min;
+        uint max;
+        uint augMerkle;
+        
+        bool indicesAreValid;
+        bool readyForVerification;
+    }
+    
+    function getClaimData( address sender, uint submissionIndex, uint shareIndex, uint seed )
+                           constant internal returns(SubmissionDataForClaimVerification){
+                           
+        SubmissionDataForClaimVerification memory output;
+
+        SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
+        
+        output.lastCounter = uint(metaData.lastCounter);
+        output.numShares = uint(metaData.numSubmittedShares);
+        output.shareDifficulty = uint(metaData.difficulty);
+        output.averageBlockDifficulty = getAverageDifficulty( sender );
+        
+
+        SingleSubmissionData memory submissionData = (submissionsData[sender])[submissionIndex];
+        
+        output.min = uint(submissionData.min);
+        output.max = uint(submissionData.max);
+        output.augMerkle = uint(submissionData.augRoot);
+        
+        output.indicesAreValid = verifySubmissionIndex( sender, seed, submissionIndex, shareIndex );
+        output.readyForVerification = (metaData.readyForVerification > 0);
+        
+        return output; 
+    }
+}
+
+
+contract TestPool is Ethash, Agt, WeightedSubmission {    
     string  public version = "0.1.1";
     uint    public creationBlockNumber; 
     
     bool public newVersionReleased = false;
-    
-    struct SubmissionData {
-        uint numShares;
-        uint difficulty;
-        uint min;
-        uint max;
-        uint augMerkle;
-        uint blockNumber;
-    }
-    
+        
     struct MinerData {
         bytes32        minerId;
         address        paymentAddress;
-        SubmissionData lastSubmission;
-        bool           pendingClaim;     
-        uint           lastCounter;
     }
 
     mapping(address=>MinerData) minersData;
@@ -1451,49 +1640,6 @@ contract TestPool is Ethash, Agt {
         
         UpdateWhiteList( msg.sender, 0, uint(miner), add );
     }
-
-    function getClaimSeed(address sender) constant returns(uint){
-        MinerData memory data = minersData[sender];
-        if( block.number > data.lastSubmission.blockNumber + 200 ) return 0;
-        if( block.number <= data.lastSubmission.blockNumber + 15 ) return 0;
-                
-        return uint(block.blockhash(data.lastSubmission.blockNumber + 10));
-    }
-    
-    event SubmitClaim( address indexed sender, uint error, uint errorInfo );
-    function submitClaim( uint numShares, uint difficulty, uint min, uint max, uint augMerkle ) {
-    
-        if( ! isRegistered(msg.sender) ) {
-            // miner is not registered
-            SubmitClaim( msg.sender, 0x81000000, 0 );
-            return;         
-        }
-    
-        MinerData memory data = minersData[msg.sender];
-        
-        if( data.lastCounter >= min ) {
-            // miner cheated. min counter is too low
-            SubmitClaim( msg.sender, 0x81000001, data.lastCounter ); 
-            return;        
-        }
-        
-        MinerData memory newData = data;
-        
-        newData.lastCounter = max;
-        
-        newData.lastSubmission.numShares = numShares;
-        newData.lastSubmission.difficulty = difficulty;
-        newData.lastSubmission.min = min;
-        newData.lastSubmission.max = max;
-        newData.lastSubmission.augMerkle = augMerkle;
-        newData.lastSubmission.blockNumber = block.number;
-        newData.pendingClaim = true;
-        
-        minersData[msg.sender] = newData;
-        
-        // everything is ok
-        SubmitClaim( msg.sender, 0, 0 );
-    }    
     
     event VerifyExtraData( address indexed sender, uint error, uint errorInfo );    
     function verifyExtraData( bytes32 extraData, bytes32 minerId, uint difficulty ) constant internal returns(bool) {
@@ -1525,15 +1671,23 @@ contract TestPool is Ethash, Agt {
         
     function verifyClaim( bytes rlpHeader,
                           uint  nonce,
+                          uint  submissionIndex,
                           uint  shareIndex,
                           uint[] dataSetLookup,
                           uint[] witnessForLookup,
                           uint[] augCountersBranch,
                           uint[] augHashesBranch ) {
-                          
-        SubmissionData memory submissionData = minersData[ msg.sender ].lastSubmission;
- 
-        if( ! minersData[ msg.sender ].pendingClaim ) {
+
+        if( ! isRegistered(msg.sender) ) {
+            // miner is not registered
+            VerifyClaim( msg.sender, 0x8400000c, 0 );
+            return;         
+        }
+
+        SubmissionDataForClaimVerification memory submissionData = getClaimData( msg.sender,
+            submissionIndex, shareIndex, getClaimSeed( msg.sender ) ); 
+                              
+        if( ! submissionData.readyForVerification ) {
             //ErrorLog( "there are no pending claims", 0 );
             VerifyClaim( msg.sender, 0x84000003, 0 );            
             return;
@@ -1544,7 +1698,7 @@ contract TestPool is Ethash, Agt {
         // check extra data
         if( ! verifyExtraData( header.extraData,
                                minersData[ msg.sender ].minerId,
-                               submissionData.difficulty ) ) {
+                               submissionData.shareDifficulty ) ) {
             //ErrorLog( "extra data not as expected", uint(header.extraData) );
             VerifyClaim( msg.sender, 0x84000004, uint(header.extraData) );            
             return;                               
@@ -1605,7 +1759,7 @@ contract TestPool is Ethash, Agt {
                                  dataSetLookup,
                                  witnessForLookup,
                                  header.blockNumber / 30000 );
-        if( ethash > ((2**256-1)/submissionData.difficulty )) {
+        if( ethash > ((2**256-1)/submissionData.shareDifficulty )) {
             //ErrorLog( "ethash difficulty too low",ethash);
             VerifyClaim( msg.sender, 0x8400000b, ethash );            
             return;        
@@ -1617,39 +1771,32 @@ contract TestPool is Ethash, Agt {
             return;        
         }
         
-
-        if( shareIndex != getShareIndex(msg.sender) ) {
-            //ErrorLog( "share index is not as expected. should be:", getShareIndex() );
-            VerifyClaim( msg.sender, 0x84000002, getShareIndex(msg.sender) );            
+        if( ! submissionData.indicesAreValid ) {
+            //ErrorLog( "share index or submission are not as expected. should be:", getShareIndex() );
+            VerifyClaim( msg.sender, 0x84000002, 0 );
             return;                
         } 
         
-        
-        minersData[ msg.sender ].pendingClaim = false;
-        
-        if( ! doPayment(submissionData.numShares, submissionData.difficulty, minersData[ msg.sender ].paymentAddress) ) {
+        // recrusive attack is not possible as doPayment is using send and not call.
+        if( ! doPayment(submissionData.numShares,
+                        submissionData.shareDifficulty,
+                        submissionData.averageBlockDifficulty,
+                        minersData[ msg.sender ].paymentAddress) ) {
             // error msg is given in doPayment function
             return;
         }
-        ValidShares( msg.sender, now, submissionData.numShares, submissionData.difficulty );
+        
+        closeSubmission( msg.sender );
+        //minersData[ msg.sender ].pendingClaim = false;
+        
+        
+        ValidShares( msg.sender, now, submissionData.numShares, submissionData.shareDifficulty );
         VerifyClaim( msg.sender, 0, 0 );                        
         
         
         return;
     }    
     
-    
-    
-    function getShareIndex(address sender) constant returns(uint) {
-        SubmissionData submissionData = minersData[ sender ].lastSubmission;    
-        return (getClaimSeed(sender) % submissionData.numShares);
-    }
-    
-    event GetShareIndexDebugForTestRPC( uint index );
-    function getShareIndexDebugForTestRPC( address sender ) {
-        GetShareIndexDebugForTestRPC(getShareIndex(sender));
-    }
-
 
     // 10000 = 100%
     uint public uncleRate = 500; // 5%
@@ -1676,15 +1823,12 @@ contract TestPool is Ethash, Agt {
         SetUnlceRateAndFees( msg.sender, 0, 0 );
     }
         
-    function doPayment( uint numShares, uint difficulty, address paymentAddress ) internal returns(bool) {
+    function doPayment( uint numShares,
+                        uint difficulty,
+                        uint averageBlockDifficulty,
+                        address paymentAddress ) internal returns(bool) {
 
-        uint blockDifficulty;
-        if( block.difficulty > 0 ) {
-            blockDifficulty = block.difficulty;
-        }
-        else { // testrpc
-            blockDifficulty = 900000000;
-        }
+        uint blockDifficulty = averageBlockDifficulty;
         
         uint payment =  (5 ether * difficulty * numShares / blockDifficulty);
         // take uncle rate into account
