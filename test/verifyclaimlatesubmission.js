@@ -9,6 +9,7 @@ var TestPool = artifacts.require("./TestPool.sol");
 var pool;
 var poolAddressString = "0x07a457d878bf363e0bb5aa0b096092f941e19962";
 var shareIndex; 
+var submissionIndex;
 
 contract('TestPool_verifyclaimlatesubmission', function(accounts) {
   
@@ -22,7 +23,7 @@ contract('TestPool_verifyclaimlatesubmission', function(accounts) {
     
 
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[9]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[9],gas:0x5000000}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
     });    
@@ -64,7 +65,8 @@ contract('TestPool_verifyclaimlatesubmission', function(accounts) {
                             sumbitClaimInput.difficulty,
                             sumbitClaimInput.min,
                             sumbitClaimInput.max,
-                            sumbitClaimInput.augMerkle ).then(function(result){
+                            sumbitClaimInput.augMerkle,
+                            true ).then(function(result){
         helpers.CheckEvent( result, "SubmitClaim", 0 );
     });
   });
@@ -74,20 +76,23 @@ contract('TestPool_verifyclaimlatesubmission', function(accounts) {
   it("Get share index", function() {
     helpers.mineBlocks(260,accounts[7]);
     return pool.getShareIndexDebugForTestRPC(accounts[0]).then(function(result){
-            assert.equal(result.logs.length, 1, "expected a single event");
-            assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPC", "expected getShareIndexDebugForTestRPC");
-        
-            shareIndex = new BigNumber(result.logs[0].args.index);
+            assert.equal(result.logs.length, 2, "expected two events");
+            assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPCSubmissionIndex", "expected getShareIndexDebugForTestRPC");
+            assert.equal(result.logs[1].event, "GetShareIndexDebugForTestRPCShareIndex", "expected getShareIndexDebugForTestRPC");
+
+            submissionIndex = new BigNumber(result.logs[0].args.index);        
+            shareIndex = new BigNumber(result.logs[1].args.index);
     });
   });
 
 
   it("Verify claim", function() {  
     // Sending and receiving data in JSON format using POST mothod
-    helpers.SendEther(accounts[0],poolAddressString,1);    
+    helpers.SendEther(accounts[1],poolAddressString,1);    
     var verifyClaimInput = inputs.getValidClaimVerificationInput(shareIndex);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,

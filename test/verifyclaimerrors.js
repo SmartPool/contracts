@@ -10,6 +10,7 @@ var TestPool = artifacts.require("./TestPool.sol");
 var pool;
 var poolAddressString = "0x07a457d878bf363e0bb5aa0b096092f941e19962";
 var shareIndex;
+var submissionIndex;
 
 contract('TestPool_verifyclaimerros', function(accounts) {
   
@@ -23,12 +24,32 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     
 
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[9]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[9],gas:0x5000000}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
+        return pool.owners(accounts[0]);
+    }).then(function(result){
+        console.log(result);
     });    
   });
-  
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("Verify before registration", function() {
+    var verifyClaimInput = inputs.getValidClaimVerificationInput(0);
+    return pool.verifyClaim(verifyClaimInput.rlpHeader,
+                            verifyClaimInput.nonce,
+                            0,
+                            verifyClaimInput.shareIndex,
+                            verifyClaimInput.dataSetLookup,
+                            verifyClaimInput.witnessForLookup,
+                            verifyClaimInput.augCountersBranchArray,
+                            verifyClaimInput.augHashesBranch ).then(function(result){
+        helpers.CheckEvent( result, "VerifyClaim", 0x8400000c );        
+    });
+  });
+
+
 ////////////////////////////////////////////////////////////////////////////////  
   
   it("Register", function() {
@@ -43,6 +64,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getValidClaimVerificationInput(0);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -60,7 +82,8 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             sumbitClaimInput.difficulty,
                             sumbitClaimInput.min,
                             sumbitClaimInput.max,
-                            sumbitClaimInput.augMerkle ).then(function(result){
+                            sumbitClaimInput.augMerkle,
+                            true ).then(function(result){
         helpers.CheckEvent( result, "SubmitClaim", 0 );
     });
   });
@@ -71,6 +94,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getValidClaimVerificationInput(0);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -92,7 +116,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                            setEpochDataInput.branchDepth,
                            setEpochDataInput.merkleNodes,
                            setEpochDataInput.start,
-                           setEpochDataInput.numElems ).then(function(result){
+                           setEpochDataInput.numElems, {from:accounts[0]} ).then(function(result){
                                helpers.CheckEvent( result, "SetEpochData", 0 );
                            });
     }
@@ -107,6 +131,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getValidClaimVerificationInput(0);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -121,6 +146,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getWrongMinderIdClaimVerificationInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -138,6 +164,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getWrongDifficultyClaimVerificationInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -155,6 +182,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getWrongCoinbaseClaimVerificationInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -169,6 +197,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getSmallCounterClaimVerificationInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -183,6 +212,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getBigCounterClaimVerificationInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -197,6 +227,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getWrongAgtClaimVerificationInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -211,6 +242,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getWrongEthashClaimVerificationInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -224,12 +256,34 @@ contract('TestPool_verifyclaimerros', function(accounts) {
   it("Get share index", function() {
     helpers.mineBlocks(26,accounts[7]);
     return pool.getShareIndexDebugForTestRPC(accounts[0]).then(function(result){
-            assert.equal(result.logs.length, 1, "expected a single event");
-            assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPC", "expected getShareIndexDebugForTestRPC");
-        
-            shareIndex = new BigNumber(result.logs[0].args.index);
+            assert.equal(result.logs.length, 2, "expected two events");
+            assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPCSubmissionIndex", "expected getShareIndexDebugForTestRPC");
+            assert.equal(result.logs[1].event, "GetShareIndexDebugForTestRPCShareIndex", "expected getShareIndexDebugForTestRPC");
+
+            submissionIndex = new BigNumber(result.logs[0].args.index);        
+            shareIndex = new BigNumber(result.logs[1].args.index);            
     });
   });
+
+  it("Verify claim with wrong submission index", function() {  
+    // Sending and receiving data in JSON format using POST mothod
+    var index;
+    if( submissionIndex > 0 ) index = submissionIndex - 1;
+    else index = 1;
+    
+    var verifyClaimInput = inputs.getValidClaimVerificationInput(index);
+    return pool.verifyClaim(verifyClaimInput.rlpHeader,
+                            verifyClaimInput.nonce,
+                            submissionIndex,
+                            verifyClaimInput.shareIndex,
+                            verifyClaimInput.dataSetLookup,
+                            verifyClaimInput.witnessForLookup,
+                            verifyClaimInput.augCountersBranchArray,
+                            verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );        
+    });
+  });
+
 
   it("Verify claim with wrong share index", function() {  
     // Sending and receiving data in JSON format using POST mothod
@@ -240,6 +294,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getValidClaimVerificationInput(index);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -255,6 +310,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     var verifyClaimInput = inputs.getValidClaimVerificationInput(shareIndex);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
+                            0,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -263,7 +319,6 @@ contract('TestPool_verifyclaimerros', function(accounts) {
         helpers.CheckEvent( result, "VerifyClaim", 0x84000000 );        
     });
   });
-
 
 ////////////////////////////////////////////////////////////////////////////////  
 });

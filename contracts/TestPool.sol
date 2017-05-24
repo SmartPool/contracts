@@ -1298,8 +1298,8 @@ contract WeightedSubmission {
     
     struct SingleSubmissionData {
         uint128 numShares;
-        uint128 totalWork;
-        uint128 totalPreviousWork;
+        uint128 normWork;
+        uint128 totalPreviousNormWork;
         uint128 min;
         uint128 max;
         uint128 augRoot;
@@ -1307,7 +1307,8 @@ contract WeightedSubmission {
     
     struct SubmissionMetaData {
         uint64  numPendingSubmissions;
-        uint64  lastSubmissionBlockNumber;        
+        uint64  lastSubmissionBlockNumber;
+        uint128 totalNormWork;        
         uint128 totalWork;
         uint128 difficulty;
         uint128 lastCounter;
@@ -1345,19 +1346,28 @@ contract WeightedSubmission {
                 return;            
             }
         }
+        
+        if( block.difficulty > (1<<72) ) {
+            // block difficulty is higher than expected when writing this contract
+            SubmitClaim( msg.sender, 0x81000004, block.difficulty ); 
+            return;                    
+        }
 
         SingleSubmissionData memory submissionData;
         
         submissionData.numShares = uint64(numShares);
-        if( block.difficulty > 0 ) {
-            submissionData.totalWork = uint128(numShares * block.difficulty);
+        uint blockDifficulty;
+        if( block.difficulty == 0 ) {
+            // testrpc - fake increasing difficulty
+            blockDifficulty = (900000000 * (metaData.numPendingSubmissions+1)); 
         }
         else {
-            // test rpc
-            submissionData.totalWork = uint128(numShares * 900000000);            
+            blockDifficulty = block.difficulty;
         }
         
-        submissionData.totalPreviousWork = metaData.totalWork;
+        submissionData.normWork = uint128(numShares * ((1<<72) / blockDifficulty));
+        
+        submissionData.totalPreviousNormWork = metaData.totalNormWork;
         submissionData.min = uint128(min);
         submissionData.max = uint128(max);
         submissionData.augRoot = uint128(augRoot);
@@ -1366,12 +1376,32 @@ contract WeightedSubmission {
         
         // update meta data
         metaData.numPendingSubmissions++;
-        metaData.numSubmittedShares += uint64(numShares);
         metaData.lastSubmissionBlockNumber = uint64(block.number);
-        metaData.totalWork += submissionData.totalWork;
         metaData.difficulty = uint128(difficulty);
         metaData.lastCounter = uint128(max);
-        metaData.readyForVerification = lastClaimBeforeVerification ? uint64(0) : uint64(1);
+        metaData.readyForVerification = lastClaimBeforeVerification ? uint64(1) : uint64(0);
+
+        uint64 temp64; uint128 firstTemp128; uint128 secondTemp128;
+        
+        temp64 = metaData.numSubmittedShares;
+        firstTemp128 = metaData.totalWork; 
+        secondTemp128 = metaData.totalNormWork;
+        
+        metaData.numSubmittedShares += uint64(numShares);
+        metaData.totalWork += uint128(blockDifficulty * numShares);
+        metaData.totalNormWork += submissionData.normWork;
+        
+        if( (temp64 > metaData.numSubmittedShares) ||
+            (firstTemp128 > metaData.totalWork )        ||
+            (secondTemp128 > metaData.totalNormWork ) ) {
+            // overflow in calculation
+            // note that this code is reachable if user is dishonest and give false
+            // report on his submission. but even without
+            // this validation, user cannot benifit from the overflow
+            SubmitClaim( msg.sender, 0x81000005, 0 ); 
+            return;                                
+        }
+                
         
         submissionsMetaData[msg.sender] = metaData;
         
@@ -1380,7 +1410,7 @@ contract WeightedSubmission {
     }
 
     function getClaimSeed(address sender) constant returns(uint){
-        SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
+        SubmissionMetaData memory metaData = submissionsMetaData[sender];
         if( metaData.readyForVerification == 0 ) return 0;
         
         uint lastBlockNumber = uint(metaData.lastSubmissionBlockNumber);
@@ -1392,8 +1422,10 @@ contract WeightedSubmission {
     }
 
     function verifySubmissionIndex( address sender, uint seed, uint submissionNumber, uint shareIndex ) constant returns(bool) {
-        uint totalWork = uint(submissionsMetaData[msg.sender].totalWork);
-        uint numPendingSubmissions = uint(submissionsMetaData[msg.sender].numPendingSubmissions);
+        if( seed == 0 ) return false;
+    
+        uint totalNormWork = uint(submissionsMetaData[sender].totalNormWork);
+        uint numPendingSubmissions = uint(submissionsMetaData[sender].numPendingSubmissions);
 
         SingleSubmissionData memory submissionData = (submissionsData[sender])[submissionNumber];        
         
@@ -1402,11 +1434,11 @@ contract WeightedSubmission {
         uint seed1 = seed & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         uint seed2 = seed / (2**128);
         
-        uint selectedWork = totalWork % seed1;
-        if( uint(submissionData.totalPreviousWork) >= selectedWork ) return false;
-        if( uint(submissionData.totalPreviousWork + submissionData.totalWork) < selectedWork ) return false;  
+        uint selectedWork = seed1 % totalNormWork;
+        if( uint(submissionData.totalPreviousNormWork) >= selectedWork ) return false;
+        if( uint(submissionData.totalPreviousNormWork + submissionData.normWork) < selectedWork ) return false;  
 
-        uint expectedShareshareIndex = uint64(submissionData.numShares) % seed2;
+        uint expectedShareshareIndex = (seed2 % uint(submissionData.numShares));
         if( expectedShareshareIndex != shareIndex ) return false;
         
         return true;
@@ -1417,42 +1449,45 @@ contract WeightedSubmission {
         uint seed1 = seed & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         uint seed2 = seed / (2**128);
 
-        uint totalWork = uint(submissionsMetaData[msg.sender].totalWork);
-        uint numPendingSubmissions = uint(submissionsMetaData[msg.sender].numPendingSubmissions);
+        uint totalWork = uint(submissionsMetaData[sender].totalNormWork);
+        uint numPendingSubmissions = uint(submissionsMetaData[sender].numPendingSubmissions);
 
-        uint selectedWork = totalWork % seed1;
+        uint selectedWork = seed1 % totalWork;
         
         SingleSubmissionData memory submissionData;        
         
         for( uint submissionInd = 0 ; submissionInd < numPendingSubmissions ; submissionInd++ ) {
             submissionData = (submissionsData[sender])[submissionInd];        
-            if( ( uint(submissionData.totalPreviousWork) < selectedWork ) &&
-                ( uint(submissionData.totalPreviousWork + submissionData.totalWork) >= selectedWork ) ) break;  
+            if( uint(submissionData.totalPreviousNormWork + submissionData.normWork) >= selectedWork ) break;  
         }
         
         // unexpected error
         if( submissionInd == numPendingSubmissions ) return [uint(0xFFFFFFFFFFFFFFFF),0xFFFFFFFFFFFFFFFF];
 
-        uint shareIndex = uint(submissionData.numShares) % seed2; 
+        uint shareIndex = seed2 % uint(submissionData.numShares); 
         
         return [submissionInd, shareIndex];
     }
     
     function getAverageDifficulty( address sender ) constant returns(uint) {
-        return uint(submissionsMetaData[msg.sender].totalWork) / uint(submissionsMetaData[msg.sender].numSubmittedShares);
+        if( submissionsMetaData[sender].numSubmittedShares == 0 ) return 0;
+        return uint(submissionsMetaData[sender].totalWork) / uint(submissionsMetaData[msg.sender].numSubmittedShares);
     }
     
     // should be called only from verify claim
     function closeSubmission( address sender ) internal {
-        SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
+        SubmissionMetaData memory metaData = submissionsMetaData[sender];
         metaData.numPendingSubmissions = 0;
         metaData.totalWork = 0;
+        metaData.totalNormWork = 0;
         metaData.numSubmittedShares = 0;
         metaData.readyForVerification = 0;
         
         // last counter must not be reset
         // last submission block number and difficulty are also kept, but it is not a must
         // only to save some gas        
+        
+        submissionsMetaData[sender] = metaData;
     }
     
     struct SubmissionDataForClaimVerification {
@@ -1473,7 +1508,7 @@ contract WeightedSubmission {
                            
         SubmissionDataForClaimVerification memory output;
 
-        SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
+        SubmissionMetaData memory metaData = submissionsMetaData[sender];
         
         output.lastCounter = uint(metaData.lastCounter);
         output.numShares = uint(metaData.numSubmittedShares);
@@ -1854,7 +1889,19 @@ contract TestPool is Ethash, Agt, WeightedSubmission {
     function getPoolETHBalance( ) constant returns(uint) {
         // debug function for testrpc
         return this.balance;
-    }    
+    }
+
+    event GetShareIndexDebugForTestRPCSubmissionIndex( uint index );    
+    event GetShareIndexDebugForTestRPCShareIndex( uint index );
+     
+    function getShareIndexDebugForTestRPC( address sender ) {
+        uint seed = getClaimSeed( sender );
+        uint[2] memory result = calculateSubmissionIndex( sender, seed );
+        
+        GetShareIndexDebugForTestRPCSubmissionIndex( result[0] );
+        GetShareIndexDebugForTestRPCShareIndex( result[1] );        
+            
+    }        
 }
 
 
