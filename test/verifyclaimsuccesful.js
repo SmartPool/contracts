@@ -3,10 +3,12 @@ const inputs  = require('./verifyclaiminputsepoch26');
 
 var BigNumber = require('bignumber.js');
 var TestPool = artifacts.require("./TestPool.sol");
+var Ethash = artifacts.require("./Ethash.sol");
 
 
 ////////////////////////////////////////////////////////////////////////////////
 var pool;
+var ethash;
 var poolAddressString = "0x07a457d878bf363e0bb5aa0b096092f941e19962";
 var shareIndex;
 var submissionIndex;
@@ -24,12 +26,21 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
     done();
   });
 
+  it("Create ethash", function() {
+    return Ethash.new([accounts[0],accounts[1],accounts[2]],{from:accounts[8]}).then(function(instance){
+        ethash = instance;
+    });    
+  });
+
+
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[9], gas:0x5000000}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address, false,{from:accounts[9]}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
     });    
   });
+
+
   
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -77,14 +88,14 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
     var numSetEpochInputs = inputs.getNumSetEpochInputs();
     for( var i = 0 ; i < numSetEpochInputs ; i++ ) {
         var setEpochDataInput = inputs.getSetEpochInputs(i);
-        pool.setEpochData( setEpochDataInput.epoch,
-                           setEpochDataInput.fullSizeIn128Resultion,
-                           setEpochDataInput.branchDepth,
-                           setEpochDataInput.merkleNodes,
-                           setEpochDataInput.start,
-                           setEpochDataInput.numElems ).then(function(result){
-                               helpers.CheckEvent( result, "SetEpochData", 0 );
-                           });
+        ethash.setEpochData( setEpochDataInput.epoch,
+                             setEpochDataInput.fullSizeIn128Resultion,
+                             setEpochDataInput.branchDepth,
+                             setEpochDataInput.merkleNodes,
+                             setEpochDataInput.start,
+                             setEpochDataInput.numElems ).then(function(result){
+                                 helpers.CheckEvent( result, "SetEpochData", 0 );
+                             });
     }
     
     return null;
@@ -172,3 +183,5 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
 ////////////////////////////////////////////////////////////////////////////////  
 });
 
+// gas before change: 2511472
+// gas after  change: 2568381

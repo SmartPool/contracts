@@ -3,6 +3,7 @@ const inputs  = require('./verifyagtinputs');
 
 var BigNumber = require('bignumber.js');
 var TestPool = artifacts.require("./TestPool.sol");
+var Ethash = artifacts.require("./Ethash.sol");
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -20,10 +21,15 @@ contract('TestPool_verifyagt', function(accounts) {
     done();
   });
     
+  it("Create ethash", function() {
+    return Ethash.new([accounts[0],accounts[1],accounts[2]],{from:accounts[8]}).then(function(instance){
+        ethash = instance;
+    });    
+  });
     
 
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[1],gas:0x5000000}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,false,{from:accounts[1]}).then(function(instance){
         pool = instance;
     });    
   });

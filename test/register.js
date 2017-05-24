@@ -1,7 +1,7 @@
 const helpers = require('./helpers');
 
 var TestPool = artifacts.require("./TestPool.sol");
-
+var Ethash = artifacts.require("./Ethash.sol");
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,9 +43,15 @@ contract('TestPool_register', function(accounts) {
     done();
   });
 
+  it("Create ethash", function() {
+    return Ethash.new([accounts[0],accounts[1],accounts[2]],{from:accounts[8]}).then(function(instance){
+        ethash = instance;
+    });    
+  });
+
 
   it("register with two accounts", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[0],gas:0x5000000}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,false,{from:accounts[0]}).then(function(instance){
       pool = instance;
       return checkIsAndCanRegister( pool, accounts[0],false);
     }).then(function(result){
@@ -98,7 +104,7 @@ contract('TestPool_register', function(accounts) {
 
 
   it("create pool with white list", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],true,{from:accounts[0],gas:0x5000000}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,true,{from:accounts[0]}).then(function(instance){
       whiteListPool = instance;
     });
   });
