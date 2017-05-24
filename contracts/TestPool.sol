@@ -695,7 +695,7 @@ contract WeightedSubmission {
         submissionsMetaData[msg.sender] = metaData;
         
         // everything is ok
-        SubmitClaim( msg.sender, 0, 0 );        
+        SubmitClaim( msg.sender, 0, numShares * difficulty );
     }
 
     function getClaimSeed(address sender) constant returns(uint){
@@ -815,6 +815,10 @@ contract WeightedSubmission {
         output.readyForVerification = (metaData.readyForVerification > 0);
         
         return output; 
+    }
+    
+    function debugGetNumPendingSubmissions( address sender ) constant returns(uint) {
+        return uint(submissionsMetaData[sender].numPendingSubmissions);
     }
 }
 
@@ -1195,6 +1199,10 @@ contract TestPool is Agt, WeightedSubmission {
         GetShareIndexDebugForTestRPCSubmissionIndex( result[0] );
         GetShareIndexDebugForTestRPCShareIndex( result[1] );        
             
+    }
+    
+    function debugResetSubmissions( ) {
+        closeSubmission(msg.sender);
     }        
 }
 
