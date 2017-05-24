@@ -654,7 +654,7 @@ contract WeightedSubmission {
             blockDifficulty = block.difficulty;
         }
         
-        submissionData.normWork = uint128(numShares * ((1<<72) / blockDifficulty));
+        submissionData.normWork = uint128(uint(numShares) * ((1<<72) / blockDifficulty));
         
         submissionData.totalPreviousNormWork = metaData.totalNormWork;
         submissionData.min = uint128(min);
@@ -820,6 +820,12 @@ contract WeightedSubmission {
     function debugGetNumPendingSubmissions( address sender ) constant returns(uint) {
         return uint(submissionsMetaData[sender].numPendingSubmissions);
     }
+    
+    function debugResetSubmissions( ) {
+        // should be called only in emergency
+        // msg.sender will loose all its pending shares
+        closeSubmission(msg.sender);
+    }    
 }
 
 
@@ -1199,10 +1205,6 @@ contract TestPool is Agt, WeightedSubmission {
         GetShareIndexDebugForTestRPCSubmissionIndex( result[0] );
         GetShareIndexDebugForTestRPCShareIndex( result[1] );        
             
-    }
-    
-    function debugResetSubmissions( ) {
-        closeSubmission(msg.sender);
     }        
 }
 

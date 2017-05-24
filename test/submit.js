@@ -1,5 +1,6 @@
 var TestPool = artifacts.require("./TestPool.sol");
 var Ethash = artifacts.require("./Ethash.sol");
+var BigNumber = require('bignumber.js');
 
 const helpers = require('./helpers');
 
@@ -46,4 +47,46 @@ contract('TestPool_submit', function(accounts) {
         helpers.CheckEvent( result, "SubmitClaim", 0x81000001 );
     });
   });
+  
+////////////////////////////////////////////////////////////////////////////////
+
+  it("submit different difficulty", function() {
+    return pool.submitClaim(7, 8, 200, 250, 9,false,{from: accounts[0]}).then(function(result) {
+        helpers.CheckEvent( result, "SubmitClaim", 0x81000003 );
+    });
+  });
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("overflow submitted shares", function() {
+    
+    return pool.submitClaim((new BigNumber(2).pow(64)).minus(5), 7, 300, 350, 9,false,{from: accounts[0]}).then(function(result) {
+        helpers.CheckEvent( result, "SubmitClaim", 0x81000005 );
+    });
+  });
+    
+////////////////////////////////////////////////////////////////////////////////
+
+  it("close submission", function() {
+    
+    return pool.submitClaim(2, 7, 400, 450, 9,true,{from: accounts[0]}).then(function(result) {
+        helpers.CheckEvent( result, "SubmitClaim", 0 );
+    });
+  });
+    
+////////////////////////////////////////////////////////////////////////////////
+
+  it("submit after closing batch", function() {
+    
+    return pool.submitClaim(2, 7, 500, 550, 9,false,{from: accounts[0]}).then(function(result) {
+        helpers.CheckEvent( result, "SubmitClaim", 0x81000002 );
+    });
+  });
+
+
+    
+// TODO - submit with ready for verification
+// TODO - check that caculation of odds is ok
+    
 });

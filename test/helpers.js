@@ -244,4 +244,26 @@ module.exports.ExpectedPayment = function( numShares, shareDifficulty, networkDi
 
 ////////////////////////////////////////////////////////////////////////////////
 
+module.exports.ExpectedPaymentForMultiSubmissions = function( numSharesArray,
+                                                              shareDifficulty,
+                                                              networkDifficultyArray,
+                                                              uncleRate,
+                                                              poolFee ) {
+    numSubmissions = numSharesArray.length;
+    sumNetworkDiff = 0;
+    sumNumShares = 0;
+    
+    for( var i = 0 ; i < numSubmissions ; i++ ) {
+        sumNumShares += numSharesArray[i];
+        sumNetworkDiff += networkDifficultyArray[i] * numSharesArray[i];
+    }
+    
+    var averageNetworkDiff = parseInt( (sumNetworkDiff / sumNumShares).toString() );
+    
+    return module.exports.ExpectedPayment( sumNumShares, averageNetworkDiff, uncleRate, poolFee );
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+
 
