@@ -162,6 +162,62 @@ contract('TestPool_verify3claimsuccesful', function(accounts) {
     });
   });
 
+////////////////////////////////////////////////////////////////////////////////
+/*
+  var counters = [0,0,0];
+  var totalCount = 0; 
+  var getIndices = function( seed ) {
+    var Web3 = require('web3');
+    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    seed = web3.sha3(seed.toString());  
+    pool.calculateSubmissionIndex(accounts[0],seed).then(function(result){
+        counters[parseInt(result[0].toString(10))]++;
+        totalCount++;
+        if( totalCount === 1000 ) {
+            console.log(counters);
+        }
+        
+    });
+  };
+
+      it("Get share index from seed", function() {
+      for( var i = 0 ; i < 1000 ; i++ ) {  
+         getIndices(i);
+       }
+      });      
+  
+*/
+////////////////////////////////////////////////////////////////////////////////
+
+  it("Verify claim wrong submission index", function() {  
+    // Sending and receiving data in JSON format using POST mothod
+    var claiminputs = null;
+    var subIndex = parseInt(submissionIndex.toString(10));
+    
+    if( subIndex === 0 ) subIndex = 1;
+    else subIndex--;
+    
+    if( subIndex === 0 ) claiminputs = claim1inputs;
+    else if( subIndex === 1 ) claiminputs = claim2inputs;
+    else if( subIndex === 2 ) claiminputs = claim3inputs;
+    else assert.isOk(false, 'unexpected submission index ' + subIndex.toString());
+    
+    var verifyClaimInput = claiminputs.getValidClaimVerificationInput(shareIndex);
+
+    var sumbitClaimInput = claiminputs.getSubmitClaimInput();
+    return pool.verifyClaim(verifyClaimInput.rlpHeader,
+                            verifyClaimInput.nonce,
+                            subIndex,
+                            verifyClaimInput.shareIndex,
+                            verifyClaimInput.dataSetLookup,
+                            verifyClaimInput.witnessForLookup,
+                            verifyClaimInput.augCountersBranchArray,
+                            verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
+         helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );
+       });    
+    });
+
+////////////////////////////////////////////////////////////////////////////////
 
   it("Verify claim", function() {  
     // Sending and receiving data in JSON format using POST mothod

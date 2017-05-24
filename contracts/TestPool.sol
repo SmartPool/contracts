@@ -760,7 +760,7 @@ contract WeightedSubmission {
     
     function getAverageDifficulty( address sender ) constant returns(uint) {
         if( submissionsMetaData[sender].numSubmittedShares == 0 ) return 0;
-        return uint(submissionsMetaData[sender].totalWork) / uint(submissionsMetaData[msg.sender].numSubmittedShares);
+        return uint(submissionsMetaData[sender].totalWork) / uint(submissionsMetaData[sender].numSubmittedShares);
     }
     
     // should be called only from verify claim

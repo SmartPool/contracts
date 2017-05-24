@@ -268,16 +268,17 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     });
   });
 
+/* this will be verified in verify3claimssuccesful.js
   it("Verify claim with wrong submission index", function() {  
     // Sending and receiving data in JSON format using POST mothod
     var index;
     if( submissionIndex > 0 ) index = submissionIndex - 1;
     else index = 1;
     
-    var verifyClaimInput = inputs.getValidClaimVerificationInput(index);
+    var verifyClaimInput = inputs.getValidClaimVerificationInput(shareIndex);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
-                            submissionIndex,
+                            index,
                             verifyClaimInput.shareIndex,
                             verifyClaimInput.dataSetLookup,
                             verifyClaimInput.witnessForLookup,
@@ -286,7 +287,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
         helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );        
     });
   });
-
+*/
 
   it("Verify claim with wrong share index", function() {  
     // Sending and receiving data in JSON format using POST mothod
