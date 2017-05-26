@@ -821,10 +821,12 @@ contract WeightedSubmission {
         return uint(submissionsMetaData[sender].numPendingSubmissions);
     }
     
+    event DebugResetSubmissions( address indexed sender, uint error, uint errorInfo );
     function debugResetSubmissions( ) {
         // should be called only in emergency
         // msg.sender will loose all its pending shares
         closeSubmission(msg.sender);
+        DebugResetSubmissions( msg.sender, 0, 0 );
     }    
 }
 
