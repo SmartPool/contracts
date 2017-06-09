@@ -175,6 +175,10 @@ contract('TestPool_verify3claimsuccesful', function(accounts) {
         totalCount++;
         if( totalCount === 1000 ) {
             console.log(counters);
+            console.log(claim1inputs.getSubmitClaimInput().numShares);
+            console.log(claim2inputs.getSubmitClaimInput().numShares);
+            console.log(claim3inputs.getSubmitClaimInput().numShares);
+            
         }
         
     });
@@ -187,6 +191,7 @@ contract('TestPool_verify3claimsuccesful', function(accounts) {
       });      
   
 */
+
 ////////////////////////////////////////////////////////////////////////////////
 
   it("Verify claim wrong submission index", function() {  
@@ -202,7 +207,9 @@ contract('TestPool_verify3claimsuccesful', function(accounts) {
     else if( subIndex === 2 ) claiminputs = claim3inputs;
     else assert.isOk(false, 'unexpected submission index ' + subIndex.toString());
     
-    var verifyClaimInput = claiminputs.getValidClaimVerificationInput(shareIndex);
+    var actualShareIndex = shareIndex % claiminputs.getSubmitClaimInput().numShares; 
+    
+    var verifyClaimInput = claiminputs.getValidClaimVerificationInput(actualShareIndex);
 
     var sumbitClaimInput = claiminputs.getSubmitClaimInput();
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
@@ -263,7 +270,7 @@ contract('TestPool_verify3claimsuccesful', function(accounts) {
                                 verifyClaimInput.augCountersBranchArray,
                                 verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
             assert.equal(result.logs.length, 2, "unexpected number of events");
-            assert.equal(result.logs[0].event, "ValidShares", "unexpected event" );
+            assert.equal(result.logs[0].event, "DoPayment", "unexpected event" );
             assert.equal(result.logs[1].event, "VerifyClaim", "unexpected event" );
             assert.equal(result.logs[1].args.error, 0, "unexpected error" );
           

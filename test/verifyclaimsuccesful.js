@@ -161,7 +161,7 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
                                 verifyClaimInput.augCountersBranchArray,
                                 verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
             assert.equal(result.logs.length, 2, "unexpected number of events");
-            assert.equal(result.logs[0].event, "ValidShares", "unexpected event" );
+            assert.equal(result.logs[0].event, "DoPayment", "unexpected event" );
             assert.equal(result.logs[1].event, "VerifyClaim", "unexpected event" );
             assert.equal(result.logs[1].args.error, 0, "unexpected error" );
           

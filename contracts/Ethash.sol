@@ -474,6 +474,8 @@ contract Ethash is SHA3_512 {
         uint i;
         uint j;
         
+        if( ! isEpochDataSet( epochIndex ) ) return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE;
+        
         if( depthAndFullSize[1] == 0 ) {
             return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         }

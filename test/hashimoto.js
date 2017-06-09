@@ -130,7 +130,7 @@ contract('TestPool_hashimoto', function(accounts) {
                                   validHashimotoInput.dataSetLookup,
                                   validHashimotoInput.witnessForLookup,
                                   validHashimotoInput.epochIndex ).then(function(result){
-        assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
+        assert.equal(result.toString(16),"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe", "unexpected hashimoto result at index " + index.toString());
     });
   });
   
@@ -144,7 +144,7 @@ contract('TestPool_hashimoto', function(accounts) {
                                   validHashimotoInput.dataSetLookup,
                                   validHashimotoInput.witnessForLookup,
                                   validHashimotoInput.epochIndex ).then(function(result){
-        assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
+        assert.equal(result.toString(16),"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe", "unexpected hashimoto result at index " + index.toString());
     });
   });
 
