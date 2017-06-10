@@ -30,7 +30,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
     
 
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,false,{from:accounts[9]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,accounts[7],false,{from:accounts[9]}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
     });    
@@ -143,6 +143,13 @@ contract('TestPool_verifyclaimerros', function(accounts) {
         helpers.CheckEvent( result, "VerifyClaim", 0x84000001 );        
     });
   });
+
+  it("store seed before time", function() {
+    return pool.storeClaimSeed(accounts[0]).then(function(result){
+        helpers.CheckEvent( result, "StoreClaimSeed", 0x8000002 );
+    });
+  });
+
 
   it("Verify claim wrong miner id", function() {
     // Sending and receiving data in JSON format using POST mothod

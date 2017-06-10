@@ -602,7 +602,7 @@ contract WeightedSubmission {
         uint128 difficulty;
         uint128 lastCounter;
         
-        
+        uint    submissionSeed;
         
     }
     
@@ -690,12 +690,46 @@ contract WeightedSubmission {
         SubmissionMetaData memory metaData = submissionsMetaData[sender];
         if( metaData.readyForVerification == 0 ) return 0;
         
+        if( metaData.submissionSeed != 0 ) return metaData.submissionSeed; 
+        
         uint lastBlockNumber = uint(metaData.lastSubmissionBlockNumber);
         
         if( block.number > lastBlockNumber + 200 ) return 0;
         if( block.number <= lastBlockNumber + 15 ) return 0;
                 
         return uint(block.blockhash(lastBlockNumber + 10));
+    }
+    
+    event StoreClaimSeed( address indexed sender, uint error, uint errorInfo );
+    function storeClaimSeed( address miner ) {
+        // anyone who is willing to pay gas fees can call this function
+        uint seed = getClaimSeed( miner );
+        if( seed != 0 ) {
+            submissionsMetaData[miner].submissionSeed = seed;
+            StoreClaimSeed( msg.sender, 0, uint(miner) );
+            return;
+        }
+        
+        // else
+        SubmissionMetaData memory metaData = submissionsMetaData[miner];
+        uint lastBlockNumber = uint(metaData.lastSubmissionBlockNumber);
+                
+        if( metaData.readyForVerification == 0 ) {
+            // submission is not ready for verification
+            StoreClaimSeed( msg.sender, 0x8000000, uint(miner) );
+        }
+        else if( block.number > lastBlockNumber + 200 ) {
+            // submission is not ready for verification
+            StoreClaimSeed( msg.sender, 0x8000001, uint(miner) );
+        }
+        else if( block.number <= lastBlockNumber + 15 ) {
+            // it is too late to call store function
+            StoreClaimSeed( msg.sender, 0x8000002, uint(miner) );
+        }
+        else {
+            // unknown error
+            StoreClaimSeed( msg.sender, 0x8000003, uint(miner) );
+        }
     }
 
     function verifySubmissionIndex( address sender, uint seed, uint submissionNumber, uint shareIndex ) constant returns(bool) {
@@ -752,6 +786,7 @@ contract WeightedSubmission {
         metaData.numPendingSubmissions = 0;
         metaData.totalSubmissionValue = 0;
         metaData.readyForVerification = 0;
+        metaData.submissionSeed = 0;
         
         // last counter must not be reset
         // last submission block number and difficulty are also kept, but it is not a must
@@ -812,10 +847,9 @@ contract WeightedSubmission {
 
 contract TestPool is Agt, WeightedSubmission {    
     string  public version = "0.1.1";
-    uint    public creationBlockNumber;
     
     Ethash  public ethashContract; 
-    
+    address public withdrawalAddress;
     mapping(address=>bool) public owners; 
     
     bool public newVersionReleased = false;
@@ -826,24 +860,22 @@ contract TestPool is Agt, WeightedSubmission {
     }
 
     mapping(address=>MinerData) minersData;
-    mapping(bytes32=>bool)      public existingIds;
-
-        
-    event ValidShares( address indexed miner, uint time, uint numShares, uint difficulty );
-
+    mapping(bytes32=>bool)      public existingIds;        
     
     bool public whiteListEnabled;
     mapping(address=>bool) whiteList;
     
-    function TestPool( address[3] _owners, Ethash _ethashContract, bool _whiteListEnabeled ) payable {
+    function TestPool( address[3] _owners,
+                       Ethash _ethashContract,
+                       address _withdrawalAddress,
+                       bool _whiteListEnabeled ) payable {
         owners[_owners[0]] = true; 
         owners[_owners[1]] = true;
         owners[_owners[2]] = true;
         
-        creationBlockNumber = block.number;
-        
         whiteListEnabled = _whiteListEnabeled;
-        ethashContract = _ethashContract;                
+        ethashContract = _ethashContract;
+        withdrawalAddress = _withdrawalAddress;       
     }
     
     function declareNewerVersion() {
@@ -851,7 +883,20 @@ contract TestPool is Agt, WeightedSubmission {
         
         newVersionReleased = true;
         
-        if( ! msg.sender.send(this.balance) ) throw;
+        //if( ! msg.sender.send(this.balance) ) throw;
+    }
+    
+    event Withdraw( address indexed sender, uint error, uint errorInfo );
+    function withdraw( uint amount ) {
+        if( ! owners[msg.sender] ) {
+            // only ownder can withdraw
+            Withdraw( msg.sender, 0x80000000, amount );
+            return;
+        }
+        
+        if( ! withdrawalAddress.send( amount ) ) throw;
+        
+        Withdraw( msg.sender, 0, amount );            
     }
     
     function to62Encoding( uint id, uint numChars ) constant returns(bytes32) {

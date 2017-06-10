@@ -28,7 +28,7 @@ contract('TestPool_verifyclaimlatesubmission', function(accounts) {
     
 
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,false,{from:accounts[9]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,accounts[7],false,{from:accounts[9]}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
     });    
@@ -76,6 +76,13 @@ contract('TestPool_verifyclaimlatesubmission', function(accounts) {
     });
   });
 
+  it("store seed before time", function() {
+    return pool.storeClaimSeed(accounts[0]).then(function(result){
+        helpers.CheckEvent( result, "StoreClaimSeed", 0x8000002 );
+    });
+  });
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
   it("Get share index", function() {
@@ -89,6 +96,14 @@ contract('TestPool_verifyclaimlatesubmission', function(accounts) {
             shareIndex = new BigNumber(result.logs[1].args.index);
     });
   });
+
+
+  it("store seed", function() {
+    return pool.storeClaimSeed(accounts[0]).then(function(result){
+        helpers.CheckEvent( result, "StoreClaimSeed", 0x8000001 );
+    });
+  });
+
 
 
   it("Verify claim", function() {  
