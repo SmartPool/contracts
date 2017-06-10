@@ -4,6 +4,7 @@ const inputs0  = require('./verifyclaiminputsepoch0');
 
 var BigNumber = require('bignumber.js');
 var TestPool = artifacts.require("./TestPool.sol");
+var Ethash = artifacts.require("./Ethash.sol");
 
 var Web3 = require('web3');
 
@@ -106,8 +107,18 @@ contract('TestPool_hashimoto', function(accounts) {
     done();
   });
 
+  it("Create ethash", function() {
+    return Ethash.new([accounts[0],accounts[1],accounts[2]],{from:accounts[8]}).then(function(instance){
+        ethash = instance;
+    });    
+  });
+
+
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],false,{from:accounts[0]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],
+                         ethash.address,
+                         accounts[7],
+                         false,{from:accounts[0]}).then(function(instance){
         pool = instance;
     });    
   });
@@ -117,12 +128,12 @@ contract('TestPool_hashimoto', function(accounts) {
   it("valid hashimoto epoch 0 before set epoch", function() {    
     var index = randomRange(0,10); 
     var validHashimotoInput = getHashimotoValidInputForEpoch0(index);
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
-        assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
+        assert.equal(result.toString(16),"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe", "unexpected hashimoto result at index " + index.toString());
     });
   });
   
@@ -131,12 +142,12 @@ contract('TestPool_hashimoto', function(accounts) {
   it("valid hashimoto epoch 26 before set epoch", function() {
     var index = randomRange(0,11); 
     var validHashimotoInput = getHashimotoValidInputForEpoch26(index);
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
-        assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
+        assert.equal(result.toString(16),"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe", "unexpected hashimoto result at index " + index.toString());
     });
   });
 
@@ -147,14 +158,14 @@ contract('TestPool_hashimoto', function(accounts) {
     var numSetEpochInputs = inputs0.getNumSetEpochInputs();
     for( var i = 0 ; i < numSetEpochInputs ; i++ ) {
         var setEpochDataInput = inputs0.getSetEpochInputs(i);
-        pool.setEpochData( setEpochDataInput.epoch,
-                           setEpochDataInput.fullSizeIn128Resultion,
-                           setEpochDataInput.branchDepth,
-                           setEpochDataInput.merkleNodes,
-                           setEpochDataInput.start,
-                           setEpochDataInput.numElems ).then(function(result){
-                               helpers.CheckEvent( result, "SetEpochData", 0 );
-                           });
+        ethash.setEpochData( setEpochDataInput.epoch,
+                             setEpochDataInput.fullSizeIn128Resultion,
+                             setEpochDataInput.branchDepth,
+                             setEpochDataInput.merkleNodes,
+                             setEpochDataInput.start,
+                             setEpochDataInput.numElems ).then(function(result){
+                                 helpers.CheckEvent( result, "SetEpochData", 0 );
+                             });
     }
     
     return null;
@@ -166,14 +177,14 @@ contract('TestPool_hashimoto', function(accounts) {
     var numSetEpochInputs = inputs26.getNumSetEpochInputs();
     for( var i = 0 ; i < numSetEpochInputs ; i++ ) {
         var setEpochDataInput = inputs26.getSetEpochInputs(i);
-        pool.setEpochData( setEpochDataInput.epoch,
-                           setEpochDataInput.fullSizeIn128Resultion,
-                           setEpochDataInput.branchDepth,
-                           setEpochDataInput.merkleNodes,
-                           setEpochDataInput.start,
-                           setEpochDataInput.numElems ).then(function(result){
-                               helpers.CheckEvent( result, "SetEpochData", 0 );
-                           });
+        ethash.setEpochData( setEpochDataInput.epoch,
+                             setEpochDataInput.fullSizeIn128Resultion,
+                             setEpochDataInput.branchDepth,
+                             setEpochDataInput.merkleNodes,
+                             setEpochDataInput.start,
+                             setEpochDataInput.numElems ).then(function(result){
+                                 helpers.CheckEvent( result, "SetEpochData", 0 );
+                             });
     }
     
     return null;
@@ -186,11 +197,11 @@ contract('TestPool_hashimoto', function(accounts) {
   it("valid hashimoto epoch 0", function() {    
     var index = randomRange(0,10); 
     var validHashimotoInput = getHashimotoValidInputForEpoch0(index);
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),expectedHashimotoOutputsForEpoch0[index].toString(16), "unexpected hashimoto result at index " + index.toString());
     });
   });
@@ -200,11 +211,11 @@ contract('TestPool_hashimoto', function(accounts) {
   it("valid hashimoto epoch 26", function() {
     var index = randomRange(0,11); 
     var validHashimotoInput = getHashimotoValidInputForEpoch26(index);
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),expectedHashimotoOutputsForEpoch26[index].toString(16), "unexpected hashimoto result at index " + index.toString());
     });
   });
@@ -214,11 +225,11 @@ contract('TestPool_hashimoto', function(accounts) {
   it("invalid hashimoto epoch 26: wrong header", function() {
     var index = randomRange(0,11); 
     var validHashimotoInput = getHashimotoValidInputForEpoch26(index);
-    return pool.hashimoto.call( web3.sha3(validHashimotoInput.header, {encoding: 'hex'}), 
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( web3.sha3(validHashimotoInput.header, {encoding: 'hex'}), 
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
     });
   });
@@ -228,11 +239,11 @@ contract('TestPool_hashimoto', function(accounts) {
   it("invalid hashimoto epoch 0: wrong header", function() {
     var index = randomRange(0,10); 
     var validHashimotoInput = getHashimotoValidInputForEpoch0(index);
-    return pool.hashimoto.call( web3.sha3(validHashimotoInput.header, {encoding: 'hex'}), 
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( web3.sha3(validHashimotoInput.header, {encoding: 'hex'}), 
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
     });
   });
@@ -251,11 +262,11 @@ contract('TestPool_hashimoto', function(accounts) {
         nonce = nonce.replace(nonce[2], '5');
     }
 
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                nonce.toString(),
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  nonce.toString(),
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
     });
   });
@@ -274,11 +285,11 @@ contract('TestPool_hashimoto', function(accounts) {
         nonce = nonce.replace(nonce[2], '5');
     }
 
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                nonce.toString(),
-                                validHashimotoInput.dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  nonce.toString(),
+                                  validHashimotoInput.dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString());
     });
   });
@@ -295,11 +306,11 @@ contract('TestPool_hashimoto', function(accounts) {
     var elemIndex = randomRange(0, validHashimotoInput.dataSetLookup.length - 1);
     dataSetLookup[elemIndex] = dataSetLookup[elemIndex].plus(new BigNumber(1));  
     
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString() + " at elem " + elemIndex.toString());
     });
   });
@@ -315,11 +326,11 @@ contract('TestPool_hashimoto', function(accounts) {
     var elemIndex = randomRange(0, validHashimotoInput.dataSetLookup.length - 1);
     dataSetLookup[elemIndex] = dataSetLookup[elemIndex].plus(new BigNumber(1));  
     
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                dataSetLookup,
-                                validHashimotoInput.witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  dataSetLookup,
+                                  validHashimotoInput.witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString() + " at elem " + elemIndex.toString());
     });
   });
@@ -350,11 +361,11 @@ contract('TestPool_hashimoto', function(accounts) {
     
     witnessForLookup[elemIndex] = witnessForLookup[elemIndex].plus(additionToElem);  
     
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString() + " at elem " + elemIndex.toString() + " choose lsb " + chooseLsb.toString());
     });
   });
@@ -384,11 +395,11 @@ contract('TestPool_hashimoto', function(accounts) {
     
     witnessForLookup[elemIndex] = witnessForLookup[elemIndex].plus(additionToElem);  
     
-    return pool.hashimoto.call( validHashimotoInput.header,
-                                validHashimotoInput.nonce,
-                                validHashimotoInput.dataSetLookup,
-                                witnessForLookup,
-                                validHashimotoInput.epochIndex ).then(function(result){
+    return ethash.hashimoto.call( validHashimotoInput.header,
+                                  validHashimotoInput.nonce,
+                                  validHashimotoInput.dataSetLookup,
+                                  witnessForLookup,
+                                  validHashimotoInput.epochIndex ).then(function(result){
         assert.equal(result.toString(16),"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", "unexpected hashimoto result at index " + index.toString() + " at elem " + elemIndex.toString() + " choose lsb " + chooseLsb.toString());
     });
   });

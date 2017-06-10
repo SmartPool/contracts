@@ -1,5 +1,8 @@
 const helpers = require('./helpers');
-const inputs  = require('./verifyclaiminputsepoch26');
+const epochinputs  = require('./inputsepoch32');
+const claim1inputs  = require('./verifyclaiminputepoch32claim1');
+const claim2inputs  = require('./verifyclaiminputepoch32claim2');
+const claim3inputs  = require('./verifyclaiminputepoch32claim3');
 
 var BigNumber = require('bignumber.js');
 var TestPool = artifacts.require("./TestPool.sol");
@@ -17,7 +20,7 @@ var uncleRate;
 var poolFee;
 var precision = 10000;
 
-contract('TestPool_verifyclaimsuccesful', function(accounts) {
+contract('TestPool_verify3claimsuccesful', function(accounts) {
 
   beforeEach(function(done){
     done();
@@ -85,9 +88,9 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
 ////////////////////////////////////////////////////////////////////////////////
   
   it("Set epoch", function() {
-    var numSetEpochInputs = inputs.getNumSetEpochInputs();
+    var numSetEpochInputs = epochinputs.getNumSetEpochInputs();
     for( var i = 0 ; i < numSetEpochInputs ; i++ ) {
-        var setEpochDataInput = inputs.getSetEpochInputs(i);
+        var setEpochDataInput = epochinputs.getSetEpochInputs(i);
         ethash.setEpochData( setEpochDataInput.epoch,
                              setEpochDataInput.fullSizeIn128Resultion,
                              setEpochDataInput.branchDepth,
@@ -104,8 +107,36 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
   
 ////////////////////////////////////////////////////////////////////////////////
 
-  it("Submit claim", function() {
-    var sumbitClaimInput = inputs.getSubmitClaimInput();
+  it("Submit claim 1", function() {
+    var sumbitClaimInput = claim1inputs.getSubmitClaimInput();
+    return pool.submitClaim(sumbitClaimInput.numShares,
+                            sumbitClaimInput.difficulty,
+                            sumbitClaimInput.min,
+                            sumbitClaimInput.max,
+                            sumbitClaimInput.augMerkle,
+                            false ).then(function(result){
+        helpers.CheckEvent( result, "SubmitClaim", 0 );
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("Submit claim 2", function() {
+    var sumbitClaimInput = claim2inputs.getSubmitClaimInput();
+    return pool.submitClaim(sumbitClaimInput.numShares,
+                            sumbitClaimInput.difficulty,
+                            sumbitClaimInput.min,
+                            sumbitClaimInput.max,
+                            sumbitClaimInput.augMerkle,
+                            false ).then(function(result){
+        helpers.CheckEvent( result, "SubmitClaim", 0 );
+    });
+  });
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("Submit claim 3", function() {
+    var sumbitClaimInput = claim3inputs.getSubmitClaimInput();
     return pool.submitClaim(sumbitClaimInput.numShares,
                             sumbitClaimInput.difficulty,
                             sumbitClaimInput.min,
@@ -115,6 +146,7 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
         helpers.CheckEvent( result, "SubmitClaim", 0 );
     });
   });
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -130,23 +162,100 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
     });
   });
 
+////////////////////////////////////////////////////////////////////////////////
+/*
+  var counters = [0,0,0];
+  var totalCount = 0; 
+  var getIndices = function( seed ) {
+    var Web3 = require('web3');
+    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    seed = web3.sha3(seed.toString());  
+    pool.calculateSubmissionIndex(accounts[0],seed).then(function(result){
+        counters[parseInt(result[0].toString(10))]++;
+        totalCount++;
+        if( totalCount === 1000 ) {
+            console.log(counters);
+            console.log(claim1inputs.getSubmitClaimInput().numShares);
+            console.log(claim2inputs.getSubmitClaimInput().numShares);
+            console.log(claim3inputs.getSubmitClaimInput().numShares);
+            
+        }
+        
+    });
+  };
+
+      it("Get share index from seed", function() {
+      for( var i = 0 ; i < 1000 ; i++ ) {  
+         getIndices(i);
+       }
+      });      
+  
+*/
+
+////////////////////////////////////////////////////////////////////////////////
+
+  it("Verify claim wrong submission index", function() {  
+    // Sending and receiving data in JSON format using POST mothod
+    var claiminputs = null;
+    var subIndex = parseInt(submissionIndex.toString(10));
+    
+    if( subIndex === 0 ) subIndex = 1;
+    else subIndex--;
+    
+    if( subIndex === 0 ) claiminputs = claim1inputs;
+    else if( subIndex === 1 ) claiminputs = claim2inputs;
+    else if( subIndex === 2 ) claiminputs = claim3inputs;
+    else assert.isOk(false, 'unexpected submission index ' + subIndex.toString());
+    
+    var actualShareIndex = shareIndex % claiminputs.getSubmitClaimInput().numShares; 
+    
+    var verifyClaimInput = claiminputs.getValidClaimVerificationInput(actualShareIndex);
+
+    var sumbitClaimInput = claiminputs.getSubmitClaimInput();
+    return pool.verifyClaim(verifyClaimInput.rlpHeader,
+                            verifyClaimInput.nonce,
+                            subIndex,
+                            verifyClaimInput.shareIndex,
+                            verifyClaimInput.dataSetLookup,
+                            verifyClaimInput.witnessForLookup,
+                            verifyClaimInput.augCountersBranchArray,
+                            verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
+         helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );
+       });    
+    });
+
+////////////////////////////////////////////////////////////////////////////////
 
   it("Verify claim", function() {  
     // Sending and receiving data in JSON format using POST mothod
     helpers.SendEther(accounts[2],poolAddressString,1);
-            
-    var verifyClaimInput = inputs.getValidClaimVerificationInput(shareIndex);
+    
+    var claiminputs = null;
+    var subIndex = parseInt(submissionIndex.toString(10));
+    if( subIndex === 0 ) claiminputs = claim1inputs;
+    else if( subIndex === 1 ) claiminputs = claim2inputs;
+    else if( subIndex === 2 ) claiminputs = claim3inputs;
+    else assert.isOk(false, 'unexpected submission index ' + subIndex.toString());
+    
+    var verifyClaimInput = claiminputs.getValidClaimVerificationInput(shareIndex);
     var poolBalanceBefore;
     var poolBalanceAfter;
 
-    var sumbitClaimInput = inputs.getSubmitClaimInput();
+    var sumbitClaimInput = claiminputs.getSubmitClaimInput();
     var numShares = sumbitClaimInput.numShares;
     var shareDiff = sumbitClaimInput.difficulty;
     var networkDiff = 900000000; // hardcoded for testrpc
     
-    var expectedPayment = helpers.ExpectedPayment( numShares,
+    var numSharesArray = [ claim1inputs.getSubmitClaimInput().numShares,
+                           claim2inputs.getSubmitClaimInput().numShares,
+                           claim3inputs.getSubmitClaimInput().numShares ];
+    var networkDiffArray = [ networkDiff * 1,
+                             networkDiff * 2,
+                             networkDiff * 3 ]; 
+    
+    var expectedPayment = helpers.ExpectedPaymentForMultiSubmissions( numSharesArray,
                                                    shareDiff,
-                                                   networkDiff,
+                                                   networkDiffArray,
                                                    uncleRate,
                                                    poolFee );    
     
@@ -154,7 +263,7 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
         poolBalanceBefore = result;
         return pool.verifyClaim(verifyClaimInput.rlpHeader,
                                 verifyClaimInput.nonce,
-                                0,
+                                submissionIndex,
                                 verifyClaimInput.shareIndex,
                                 verifyClaimInput.dataSetLookup,
                                 verifyClaimInput.witnessForLookup,

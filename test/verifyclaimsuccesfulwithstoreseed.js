@@ -17,7 +17,7 @@ var uncleRate;
 var poolFee;
 var precision = 10000;
 
-contract('TestPool_verifyclaimsuccesful', function(accounts) {
+contract('TestPool_verifyclaimsuccesfulwithstoreseed', function(accounts) {
 
   beforeEach(function(done){
     done();
@@ -118,8 +118,16 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-  it("Get share index", function() {
-    helpers.mineBlocks(26,accounts[7]);
+  it("store seed on time", function() {
+    helpers.mineBlocks(26,accounts[7]);  
+    return pool.storeClaimSeed(accounts[0]).then(function(result){
+        helpers.CheckEvent( result, "StoreClaimSeed", 0 );
+    });
+  });
+
+
+  it("Get share index after 260 blocks", function() {
+    helpers.mineBlocks(260,accounts[7]);  
     return pool.getShareIndexDebugForTestRPC(accounts[0]).then(function(result){
             assert.equal(result.logs.length, 2, "expected two events");
             assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPCSubmissionIndex", "expected getShareIndexDebugForTestRPC");
