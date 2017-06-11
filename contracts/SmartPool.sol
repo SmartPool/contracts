@@ -845,7 +845,7 @@ contract WeightedSubmission {
 }
 
 
-contract TestPool is Agt, WeightedSubmission {    
+contract SmartPool is Agt, WeightedSubmission {    
     string  public version = "0.1.1";
     
     Ethash  public ethashContract; 
@@ -865,10 +865,10 @@ contract TestPool is Agt, WeightedSubmission {
     bool public whiteListEnabled;
     mapping(address=>bool) whiteList;
     
-    function TestPool( address[3] _owners,
-                       Ethash _ethashContract,
-                       address _withdrawalAddress,
-                       bool _whiteListEnabeled ) payable {
+    function SmartPool( address[3] _owners,
+                        Ethash _ethashContract,
+                        address _withdrawalAddress,
+                        bool _whiteListEnabeled ) payable {
         owners[_owners[0]] = true; 
         owners[_owners[1]] = true;
         owners[_owners[2]] = true;

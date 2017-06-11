@@ -1,6 +1,6 @@
 const helpers = require('./helpers');
 
-var TestPool = artifacts.require("./TestPool.sol");
+var TestPool = artifacts.require("./SmartPool.sol");
 var Ethash = artifacts.require("./Ethash.sol");
 
 

@@ -2,7 +2,7 @@ var BigNumber = require('bignumber.js');
 
 const helpers = require('./helpers');
 
-var TestPool = artifacts.require("./TestPool.sol");
+var TestPool = artifacts.require("./SmartPool.sol");
 var Debug = artifacts.require("./Debug.sol");
 var Ethash = artifacts.require("./Ethash.sol");
 

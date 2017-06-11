@@ -5,7 +5,7 @@ const claim2inputs  = require('./verifyclaiminputepoch32claim2');
 const claim3inputs  = require('./verifyclaiminputepoch32claim3');
 
 var BigNumber = require('bignumber.js');
-var TestPool = artifacts.require("./TestPool.sol");
+var TestPool = artifacts.require("./SmartPool.sol");
 var Ethash = artifacts.require("./Ethash.sol");
 
 
