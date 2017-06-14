@@ -118,7 +118,7 @@ contract('TestPool_hashimoto', function(accounts) {
     return TestPool.new([accounts[0],accounts[1],accounts[2]],
                          ethash.address,
                          accounts[7],
-                         false,{from:accounts[0]}).then(function(instance){
+                         false, false,{from:accounts[0]}).then(function(instance){
         pool = instance;
     });    
   });

@@ -863,19 +863,27 @@ contract SmartPool is Agt, WeightedSubmission {
     mapping(bytes32=>bool)      public existingIds;        
     
     bool public whiteListEnabled;
+    bool public blackListEnabled;
     mapping(address=>bool) whiteList;
+    mapping(address=>bool) blackList;    
     
-    function SmartPool( address[3] _owners,
+    function SmartPool( address[] _owners,
                         Ethash _ethashContract,
                         address _withdrawalAddress,
-                        bool _whiteListEnabeled ) payable {
-        owners[_owners[0]] = true; 
-        owners[_owners[1]] = true;
-        owners[_owners[2]] = true;
+                        bool _whiteListEnabeled,
+                        bool _blackListEnabled ) payable {
+                        
+        for( uint i = 0 ; i < _owners.length ; i++ ) {
+            owners[_owners[0]] = true; 
+            owners[_owners[1]] = true;
+            owners[_owners[2]] = true;
+        }
+        
+        ethashContract = _ethashContract;
+        withdrawalAddress = _withdrawalAddress;
         
         whiteListEnabled = _whiteListEnabeled;
-        ethashContract = _ethashContract;
-        withdrawalAddress = _withdrawalAddress;       
+        blackListEnabled = _blackListEnabled;               
     }
     
     function declareNewerVersion() {
@@ -950,6 +958,14 @@ contract SmartPool is Agt, WeightedSubmission {
             }
         }
         
+        if( blackListEnabled ) {
+            if( blackList[ msg.sender ] ) {
+                // miner on black list
+                Register( msg.sender, 0x80000003, uint(minerId) );
+                return;                 
+            }        
+        }
+        
         
         
         // last counter is set to 0. 
@@ -970,6 +986,9 @@ contract SmartPool is Agt, WeightedSubmission {
         if( whiteListEnabled ) {
             if( ! whiteList[ sender ] ) return false; 
         }
+        if( blackListEnabled ) {
+            if( blackList[ sender ] ) return false;        
+        }
         
         return ! existingIds[expectedId];
     }
@@ -983,6 +1002,12 @@ contract SmartPool is Agt, WeightedSubmission {
     }
 
     event UpdateWhiteList( address indexed miner, uint error, uint errorInfo, bool add );
+    event UpdateBlackList( address indexed miner, uint error, uint errorInfo, bool add );    
+
+    function unRegister( address miner ) internal {
+        minersData[miner].paymentAddress = address(0);
+        existingIds[minersData[miner].minerId] = false;            
+    }
     
     function updateWhiteList( address miner, bool add ) {
         if( ! owners[ msg.sender ] ) {
@@ -999,11 +1024,57 @@ contract SmartPool is Agt, WeightedSubmission {
         whiteList[ miner ] = add;
         if( ! add && isRegistered( miner ) ) {
             // unregister
-            minersData[miner].paymentAddress = address(0);
-            existingIds[minersData[miner].minerId] = false;        
+            unRegister( miner );
         }
         
         UpdateWhiteList( msg.sender, 0, uint(miner), add );
+    }
+
+    function updateBlackList( address miner, bool add ) {
+        if( ! owners[ msg.sender ] ) {
+            // only owner can update list
+            UpdateBlackList( msg.sender, 0x80000000, 0, add );
+            return;
+        }
+        if( ! blackListEnabled ) {
+            // white list is not enabeled
+            UpdateBlackList( msg.sender, 0x80000001, 0, add );        
+            return;
+        }
+        
+        blackList[ miner ] = add;
+        if( add && isRegistered( miner ) ) {
+            // unregister
+            unRegister( miner );
+        }
+        
+        UpdateBlackList( msg.sender, 0, uint(miner), add );
+    }
+    
+    event DisableBlackListForever( address indexed sender, uint error, uint errorInfo );    
+    function disableBlackListForever() {
+        if( ! owners[ msg.sender ] ) {
+            // only owner can update list
+            DisableBlackListForever( msg.sender, 0x80000000, 0 );
+            return;
+        }
+        
+        blackListEnabled = false;
+        
+        DisableBlackListForever( msg.sender, 0, 0 );        
+    }
+
+    event DisableWhiteListForever( address indexed sender, uint error, uint errorInfo );
+    function disableWhiteListForever() {
+        if( ! owners[ msg.sender ] ) {
+            // only owner can update list
+            DisableWhiteListForever( msg.sender, 0x80000000, 0 );
+            return;
+        }
+        
+        whiteListEnabled = false;
+        
+        DisableWhiteListForever( msg.sender, 0, 0 );            
     }
     
     event VerifyExtraData( address indexed sender, uint error, uint errorInfo );    

@@ -34,7 +34,7 @@ contract('TestPool_verifyclaimsuccesfulwithstoreseed', function(accounts) {
 
 
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address, accounts[7],false,{from:accounts[9]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address, accounts[7],false,false,{from:accounts[9]}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
     });    

@@ -27,7 +27,7 @@ contract('TestPool_submit', function(accounts) {
 
 
   it("create contract", function() {    
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,accounts[7],false,{from:accounts[0]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,accounts[7],false,false,{from:accounts[0]}).then(function(instance){
       pool = instance;
     });
   });

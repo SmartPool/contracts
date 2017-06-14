@@ -29,7 +29,7 @@ contract('TestPool_verifyagt', function(accounts) {
     
 
   it("Create new pool", function() {
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,accounts[7],false,{from:accounts[1]}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,accounts[7],false,false,{from:accounts[1]}).then(function(instance){
         pool = instance;
     });    
   });

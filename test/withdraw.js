@@ -31,7 +31,7 @@ contract('TestPool_withdraw', function(accounts) {
 
   it("make new pool and tranfer wei", function() {
     multisig = accounts[7];
-    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,multisig,false,{from:accounts[0],value:0}).then(function(instance){
+    return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,multisig,false,false,{from:accounts[0],value:0}).then(function(instance){
       pool = instance;
       return Debug.new(pool.address,{from:accounts[8]});
     }).then(function(instance){
