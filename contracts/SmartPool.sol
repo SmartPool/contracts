@@ -11,6 +11,9 @@ import "./Ethash.sol";
 * RLPReader is used to read and parse RLP encoded data in memory.
 *
 * @author Andreas Olofsson (androlo1980@gmail.com)
+*
+* code was taken from https://github.com/androlo/standard-contracts/blob/master/contracts/src/codec/RLP.sol
+*
 */
 library RLP {
 
@@ -874,9 +877,7 @@ contract SmartPool is Agt, WeightedSubmission {
                         bool _blackListEnabled ) payable {
                         
         for( uint i = 0 ; i < _owners.length ; i++ ) {
-            owners[_owners[0]] = true; 
-            owners[_owners[1]] = true;
-            owners[_owners[2]] = true;
+            owners[_owners[i]] = true; 
         }
         
         ethashContract = _ethashContract;
