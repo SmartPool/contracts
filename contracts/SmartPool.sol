@@ -1295,7 +1295,7 @@ contract SmartPool is Agt, WeightedSubmission {
         return true;
     }
     
-    function getPoolETHBalance( ) constant returns(uint) {
+    function getPoolBalance( ) constant returns(uint) {
         // debug function for testrpc
         return this.balance;
     }

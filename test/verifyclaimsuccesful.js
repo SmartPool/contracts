@@ -150,7 +150,7 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
                                                    uncleRate,
                                                    poolFee );    
     
-    return pool.getPoolETHBalance().then(function(result){
+    return pool.getPoolBalance().then(function(result){
         poolBalanceBefore = result;
         return pool.verifyClaim(verifyClaimInput.rlpHeader,
                                 verifyClaimInput.nonce,
@@ -165,7 +165,7 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
             assert.equal(result.logs[1].event, "VerifyClaim", "unexpected event" );
             assert.equal(result.logs[1].args.error, 0, "unexpected error" );
           
-            return pool.getPoolETHBalance();
+            return pool.getPoolBalance();
         }).then(function(result){
             poolBalanceAfter = result;
             

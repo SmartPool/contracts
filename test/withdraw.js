@@ -37,7 +37,7 @@ contract('TestPool_withdraw', function(accounts) {
     }).then(function(instance){
       debug = instance;
       helpers.SendEther(accounts[2],pool.address.toString(),poolFunds / (10**18));
-      return pool.getPoolETHBalance();
+      return pool.getPoolBalance();
     }).then(function(result){
         poolBalance = result.toString(10);
         assert.equal(poolBalance,poolFunds.toString(), "unexpected pool balance" );    
@@ -53,7 +53,7 @@ contract('TestPool_withdraw', function(accounts) {
         balanceBefore = result.logs[0].args.result;
         return pool.withdraw( withdrawalAmount, {from:accounts[0]});
     }).then(function(result){
-        return pool.getPoolETHBalance();
+        return pool.getPoolBalance();
     }).then(function(result){
         assert.equal(parseInt(result.toString(10)),
                      poolFunds - withdrawalAmount,
@@ -69,12 +69,12 @@ contract('TestPool_withdraw', function(accounts) {
   it("withdraw without premission", function() {
     var balanceBefore;
     var withdrawalAmount = parseInt(poolFunds / 2);
-    return pool.getPoolETHBalance().then(function(result){
+    return pool.getPoolBalance().then(function(result){
         balanceBefore = result;
         return pool.withdraw( withdrawalAmount, {from:accounts[4]});
     }).then(function(result){
         helpers.CheckEvent( result, "Withdraw", 0x80000000 );
-        return pool.getPoolETHBalance();
+        return pool.getPoolBalance();
     }).then(function(result){
         assert.equal(result.toString(10),
                      balanceBefore.toString(10),
@@ -89,7 +89,7 @@ contract('TestPool_withdraw', function(accounts) {
         balanceBefore = result.logs[0].args.result;
         return pool.withdraw( withdrawalAmount, {from:accounts[0]});
     }).then(function(result){
-        return pool.getPoolETHBalance();
+        return pool.getPoolBalance();
     }).then(function(result){
         assert.equal(parseInt(result.toString(10)),
                      0,
