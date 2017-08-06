@@ -1251,6 +1251,7 @@ contract SmartPool is Agt, WeightedSubmission {
 
     event IncomingFunds( address sender, uint amountInWei );
     function() payable {
+        require(msg.value > 0 ); // prevent, e.g., receiving ERC223 tokens.
         IncomingFunds( msg.sender, msg.value );
     }
 
