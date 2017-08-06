@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.13;
 
 //solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol 
 
@@ -47,13 +47,13 @@ library RLP {
          self._unsafe_nextPtr = ptr + itemLength;
      }
      else
-         throw;
+         revert();
  }
 
  function next(Iterator memory self, bool strict) internal constant returns (RLPItem memory subItem) {
      subItem = next(self);
      if(strict && !_validate(subItem))
-         throw;
+         revert();
      return;
  }
 
@@ -88,11 +88,11 @@ library RLP {
      if(strict) {
          uint len = self.length;
          if(_payloadOffset(item) > len)
-             throw;
+             revert();
          if(_itemLength(item._unsafe_memPtr) != len)
-             throw;
+             revert();
          if(!_validate(item))
-             throw;
+             revert();
      }
      return item;
  }
@@ -168,7 +168,7 @@ library RLP {
  /// @return An 'Iterator' over the item.
  function iterator(RLPItem memory self) internal constant returns (Iterator memory it) {
      if (!isList(self))
-         throw;
+         revert();
      uint ptr = self._unsafe_memPtr + _payloadOffset(self);
      it._unsafe_item = self;
      it._unsafe_nextPtr = ptr;
@@ -177,25 +177,27 @@ library RLP {
  /// @dev Return the RLP encoded bytes.
  /// @param self The RLPItem.
  /// @return The bytes.
+ /*
  function toBytes(RLPItem memory self) internal constant returns (bytes memory bts) {
      var len = self._unsafe_length;
      if (len == 0)
          return;
      bts = new bytes(len);
      _copyToBytes(self._unsafe_memPtr, bts, len);
- }
+ }*/
 
  /// @dev Decode an RLPItem into bytes. This will not work if the
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
+ /*
  function toData(RLPItem memory self) internal constant returns (bytes memory bts) {
      if(!isData(self))
-         throw;
+         revert();
      var (rStartPos, len) = _decode(self);
      bts = new bytes(len);
      _copyToBytes(rStartPos, bts, len);
- }
+ }*/
 
  /// @dev Get the list of sub-items from an RLP encoded list.
  /// Warning: This is inefficient, as it requires that the list is read twice.
@@ -203,7 +205,7 @@ library RLP {
  /// @return Array of RLPItems.
  function toList(RLPItem memory self) internal constant returns (RLPItem[] memory list) {
      if(!isList(self))
-         throw;
+         revert();
      var numItems = items(self);
      list = new RLPItem[](numItems);
      var it = iterator(self);
@@ -218,14 +220,15 @@ library RLP {
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
+ /*
  function toAscii(RLPItem memory self) internal constant returns (string memory str) {
      if(!isData(self))
-         throw;
+         revert();
      var (rStartPos, len) = _decode(self);
      bytes memory bts = new bytes(len);
      _copyToBytes(rStartPos, bts, len);
      str = string(bts);
- }
+ }*/
 
  /// @dev Decode an RLPItem into a uint. This will not work if the
  /// RLPItem is a list.
@@ -233,10 +236,10 @@ library RLP {
  /// @return The decoded string.
  function toUint(RLPItem memory self) internal constant returns (uint data) {
      if(!isData(self))
-         throw;
+         revert();
      var (rStartPos, len) = _decode(self);
      if (len > 32 || len == 0)
-         throw;
+         revert();
      assembly {
          data := div(mload(rStartPos), exp(256, sub(32, len)))
      }
@@ -248,16 +251,16 @@ library RLP {
  /// @return The decoded string.
  function toBool(RLPItem memory self) internal constant returns (bool data) {
      if(!isData(self))
-         throw;
+         revert();
      var (rStartPos, len) = _decode(self);
      if (len != 1)
-         throw;
+         revert();
      uint temp;
      assembly {
          temp := byte(0, mload(rStartPos))
      }
      if (temp > 1)
-         throw;
+         revert();
      return temp == 1 ? true : false;
  }
 
@@ -267,10 +270,10 @@ library RLP {
  /// @return The decoded string.
  function toByte(RLPItem memory self) internal constant returns (byte data) {
      if(!isData(self))
-         throw;
+         revert();
      var (rStartPos, len) = _decode(self);
      if (len != 1)
-         throw;
+         revert();
      uint temp;
      assembly {
          temp := byte(0, mload(rStartPos))
@@ -300,10 +303,10 @@ library RLP {
  /// @return The decoded string.
  function toAddress(RLPItem memory self) internal constant returns (address data) {
      if(!isData(self))
-         throw;
+         revert();
      var (rStartPos, len) = _decode(self);
      if (len != 20)
-         throw;
+         revert();
      assembly {
          data := div(mload(rStartPos), exp(256, 12))
      }
@@ -358,7 +361,7 @@ library RLP {
  // Get start position and length of the data.
  function _decode(RLPItem memory self) private constant returns (uint memPtr, uint len) {
      if(!isData(self))
-         throw;
+         revert();
      uint b0;
      uint start = self._unsafe_memPtr;
      assembly {
@@ -384,6 +387,7 @@ library RLP {
  }
 
  // Assumes that enough memory has been allocated to store in target.
+ /* this code is commented because I am too lazy to fix it to prevent jumpi warning, and since I don't use it anyway, I might as well just remove it. 
  function _copyToBytes(uint btsPtr, bytes memory tgt, uint btsLen) private constant {
      // Exploiting the fact that 'tgt' was the last thing to be allocated,
      // we can write entire words, and just overwrite any excess.
@@ -405,7 +409,7 @@ library RLP {
                  mstore(add(tgt, add(0x20, mload(tgt))), 0)
          }
      }
- }
+ }*/
 
      // Check that an RLP item is valid.
      function _validate(RLPItem memory self) private constant returns (bool ret) {
@@ -888,7 +892,7 @@ contract SmartPool is Agt, WeightedSubmission {
     }
     
     function declareNewerVersion() {
-        if( ! owners[msg.sender] ) throw;
+        require( owners[msg.sender] );
         
         newVersionReleased = true;
         
@@ -903,13 +907,13 @@ contract SmartPool is Agt, WeightedSubmission {
             return;
         }
         
-        if( ! withdrawalAddress.send( amount ) ) throw;
+        withdrawalAddress.transfer( amount );
         
         Withdraw( msg.sender, 0, amount );            
     }
     
     function to62Encoding( uint id, uint numChars ) constant returns(bytes32) {
-        if( id >= (26+26+10)**numChars ) throw;
+        require( id < (26+26+10)**numChars );
         uint result = 0;
         for( uint i = 0 ; i < numChars ; i++ ) {
             uint b = id % (26+26+10);
@@ -1284,7 +1288,7 @@ contract SmartPool is Agt, WeightedSubmission {
             return false;
         }
                 
-        if( ! paymentAddress.send( payment ) ) throw;
+        paymentAddress.transfer( payment );
         
         DoPayment( msg.sender, paymentAddress, payment ); 
         
