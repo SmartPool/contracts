@@ -877,7 +877,7 @@ contract SmartPool is Agt, WeightedSubmission {
     function SmartPool( address[] _owners,
                         Ethash _ethashContract,
                         address _withdrawalAddress,
-                        bool _whiteListEnabeled,
+                        bool _whiteListEnabled,
                         bool _blackListEnabled ) payable {
                         
         for( uint i = 0 ; i < _owners.length ; i++ ) {
@@ -887,7 +887,7 @@ contract SmartPool is Agt, WeightedSubmission {
         ethashContract = _ethashContract;
         withdrawalAddress = _withdrawalAddress;
         
-        whiteListEnabled = _whiteListEnabeled;
+        whiteListEnabled = _whiteListEnabled;
         blackListEnabled = _blackListEnabled;               
     }
     
