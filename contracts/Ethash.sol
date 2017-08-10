@@ -1,4 +1,4 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.13;
 
 //solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol 
 
@@ -11,8 +11,8 @@ contract SHA3_512 {
     function keccak_f(uint[25] A) constant internal returns(uint[25]) {
         uint[5] memory C;
         uint[5] memory D;
-        uint x;
-        uint y;
+        //uint x;
+        //uint y;
         //uint D_0; uint D_1; uint D_2; uint D_3; uint D_4;
         uint[25] memory B;
         
@@ -173,7 +173,7 @@ contract SHA3_512 {
  
     
     function sponge(uint[9] M) constant internal returns(uint[16]) {
-        if( (M.length * 8) != 72 ) throw;
+        require( (M.length * 8) == 72 );
         M[5] = 0x01;
         M[8] = 0x8000000000000000;
         
@@ -239,14 +239,13 @@ contract Ethash is SHA3_512 {
                                uint[] witness,
                                uint branchSize ) constant private returns(uint) {
  
-                       
         uint leaf = computeLeaf(elements, indexInElementsArray) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
         uint left;
         uint right;
         uint node;
         bool oddBranchSize = (branchSize % 2) > 0;
-         
+                          
         assembly {
             branchSize := div(branchSize,2)
             //branchSize /= 2;
@@ -401,9 +400,9 @@ contract Ethash is SHA3_512 {
     }
     
     struct EthashCacheOptData {
-        uint[512]    merkleNodes;
-        uint         fullSizeIn128Resultion;
-        uint         branchDepth;
+        uint[512]         merkleNodes;
+        uint              fullSizeIn128Resultion;
+        uint              branchDepth;
     }
     
     mapping(uint=>EthashCacheOptData) epochData;
