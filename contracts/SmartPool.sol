@@ -654,7 +654,7 @@ contract WeightedSubmission {
             blockDifficulty = block.difficulty;
         }
         
-        submissionData.submissionValue = uint128((uint(numShares * difficulty) * (5 ether)) / blockDifficulty);
+        submissionData.submissionValue = uint128((uint(numShares * difficulty) * (3 ether)) / blockDifficulty);
         
         submissionData.totalPreviousSubmissionValue = metaData.totalSubmissionValue;
         submissionData.min = uint128(min);
