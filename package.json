@@ -1,0 +1,28 @@
+{
+  "name": "smartpool-contracts",
+  "version": "1.0.0",
+  "description": "Test suite for SmartPool/contracts",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SmartPool/contracts.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/SmartPool/contracts/issues"
+  },
+  "homepage": "https://github.com/SmartPool/contracts#readme",
+  "dependencies": {
+    "bignumber.js": "^5.0.0",
+    "ethereumjs-testrpc": "^6.0.3",
+    "truffle": "^4.0.1",
+    "web3": "^1.0.0-beta.26"
+  }
+}
