@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/testrpc -p 18545 --deterministic smartpool > /dev/null & TRPC=$! && ./node_modules/.bin/truffle test ; RES=$? ; kill -9 $TRPC ; (exit $RES)"
   },
   "repository": {
     "type": "git",
