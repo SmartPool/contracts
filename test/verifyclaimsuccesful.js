@@ -29,7 +29,7 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
   it("Create ethash", function() {
     return Ethash.new([accounts[0],accounts[1],accounts[2]],{from:accounts[8]}).then(function(instance){
         ethash = instance;
-    });    
+    });
   });
 
 
@@ -37,17 +37,18 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
     return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address, accounts[7],false,false,{from:accounts[9]}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
-    });    
+    });
   });
 
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
   it("check uncle rate and fee default params", function() {
     return pool.poolFees().then(function(result){
         assert.equal(result, 0 * precision, "default fees should be 0");
         return pool.uncleRate();
+
     }).then(function(result){
         assert.equal(result, parseInt(0.05 * precision), "default uncle rate should be 5%");
     });
@@ -59,31 +60,31 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
   it("set uncle rate and fees", function() {
     uncleRate = 0.035; // 3.5%
     poolFee = 0.005; // 0.5%
-  
+
     // first set by non-owner
     return pool.setUnlceRateAndFees( parseInt((uncleRate + 0.01) * precision),
                                      parseInt((poolFee + 0.01) * precision ),
                                      {from:accounts[8]} ).then(function(result){
-        helpers.CheckEvent( result, "SetUnlceRateAndFees", 0x80000000 );                                     
+        helpers.CheckEvent( result, "SetUnlceRateAndFees", 0x80000000 );
         // do by owner
         return pool.setUnlceRateAndFees( parseInt(uncleRate * precision),
                                      parseInt(poolFee * precision ),
                                      {from:accounts[0]} );
     }).then(function(result){
-        helpers.CheckEvent( result, "SetUnlceRateAndFees", 0 );        
-    });  
+        helpers.CheckEvent( result, "SetUnlceRateAndFees", 0 );
+    });
   });
 
-////////////////////////////////////////////////////////////////////////////////  
-  
+////////////////////////////////////////////////////////////////////////////////
+
   it("Register", function() {
     return pool.register(accounts[1],{from:accounts[0]}).then(function(result){
         helpers.CheckEvent( result, "Register", 0 );
     });
   });
-  
+
 ////////////////////////////////////////////////////////////////////////////////
-  
+
   it("Set epoch", function() {
     var numSetEpochInputs = inputs.getNumSetEpochInputs();
     for( var i = 0 ; i < numSetEpochInputs ; i++ ) {
@@ -97,11 +98,11 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
                                  helpers.CheckEvent( result, "SetEpochData", 0 );
                              });
     }
-    
+
     return null;
   });
 
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
   it("Submit claim", function() {
@@ -119,22 +120,20 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
 ////////////////////////////////////////////////////////////////////////////////
 
   it("Get share index", function() {
-    helpers.mineBlocks(26,accounts[7]);
-    return pool.getShareIndexDebugForTestRPC(accounts[0]).then(function(result){
+    return helpers.mineBlocksWithPromise(26,accounts[7]).then(function(){
+      return pool.getShareIndexDebugForTestRPC(accounts[0]);
+    }).then(function(result){
             assert.equal(result.logs.length, 2, "expected two events");
             assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPCSubmissionIndex", "expected getShareIndexDebugForTestRPC");
             assert.equal(result.logs[1].event, "GetShareIndexDebugForTestRPCShareIndex", "expected getShareIndexDebugForTestRPC");
 
-            submissionIndex = new BigNumber(result.logs[0].args.index);        
-            shareIndex = new BigNumber(result.logs[1].args.index);            
+            submissionIndex = new BigNumber(result.logs[0].args.index);
+            shareIndex = new BigNumber(result.logs[1].args.index);
     });
   });
 
 
-  it("Verify claim", function() {  
-    // Sending and receiving data in JSON format using POST mothod
-    helpers.SendEther(accounts[2],poolAddressString,1);
-            
+  it("Verify claim", function() {
     var verifyClaimInput = inputs.getValidClaimVerificationInput(shareIndex);
     var poolBalanceBefore;
     var poolBalanceAfter;
@@ -143,44 +142,47 @@ contract('TestPool_verifyclaimsuccesful', function(accounts) {
     var numShares = sumbitClaimInput.numShares;
     var shareDiff = sumbitClaimInput.difficulty;
     var networkDiff = 900000000; // hardcoded for testrpc
-    
+
     var expectedPayment = helpers.ExpectedPayment( numShares,
                                                    shareDiff,
                                                    networkDiff,
                                                    uncleRate,
-                                                   poolFee );    
-    
-    return pool.getPoolBalance().then(function(result){
-        poolBalanceBefore = result;
-        return pool.verifyClaim(verifyClaimInput.rlpHeader,
-                                verifyClaimInput.nonce,
-                                0,
-                                verifyClaimInput.shareIndex,
-                                verifyClaimInput.dataSetLookup,
-                                verifyClaimInput.witnessForLookup,
-                                verifyClaimInput.augCountersBranchArray,
-                                verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
-            assert.equal(result.logs.length, 2, "unexpected number of events");
-            assert.equal(result.logs[0].event, "DoPayment", "unexpected event" );
-            assert.equal(result.logs[1].event, "VerifyClaim", "unexpected event" );
-            assert.equal(result.logs[1].args.error, 0, "unexpected error" );
-          
-            return pool.getPoolBalance();
+                                                   poolFee );
+
+    return helpers.sendEtherWithPromise(accounts[2],poolAddressString,1).then(function(){
+
+      return pool.getPoolBalance().then(function(result){
+          poolBalanceBefore = result;
+          return pool.verifyClaim(verifyClaimInput.rlpHeader,
+                                  verifyClaimInput.nonce,
+                                  0,
+                                  verifyClaimInput.shareIndex,
+                                  verifyClaimInput.dataSetLookup,
+                                  verifyClaimInput.witnessForLookup,
+                                  verifyClaimInput.augCountersBranchArray,
+                                  verifyClaimInput.augHashesBranch, {from:accounts[0]} );
+        }).then(function(result){
+              assert.equal(result.logs.length, 2, "unexpected number of events");
+              assert.equal(result.logs[0].event, "DoPayment", "unexpected event" );
+              assert.equal(result.logs[1].event, "VerifyClaim", "unexpected event" );
+              assert.equal(result.logs[1].args.error, 0, "unexpected error" );
+
+              return pool.getPoolBalance();
         }).then(function(result){
             poolBalanceAfter = result;
-            
+
             var balanceDiff = poolBalanceBefore.minus(poolBalanceAfter);
             var paymentAsExpected = true;
             if( expectedPayment.plus(2).lessThan(balanceDiff) ) paymentAsExpected = false;
             if( expectedPayment.minus(2).greaterThan(balanceDiff) ) paymentAsExpected = false;
-            
-            assert.isOk(paymentAsExpected, 'expected payment ' + expectedPayment.toString(10) + ' is not the same as balance diff ' + balanceDiff.toString(10));            
+
+            assert.isOk(paymentAsExpected, 'expected payment ' + expectedPayment.toString(10) + ' is not the same as balance diff ' + balanceDiff.toString(10));
         });
       });
     });
 
 
-////////////////////////////////////////////////////////////////////////////////  
+////////////////////////////////////////////////////////////////////////////////
 });
 
 // gas before change: 2511472

@@ -3,10 +3,10 @@ module.exports.CheckEvent = function ( result, eventString, expectedError ) {
     for (var i = 0; i < result.logs.length; i++) {
         // If this callback is called, the transaction was successfully processed.
         var log = result.logs[i];
-        
+
         assert.equal(log.event, eventString, "unexpected event");
         assert.equal(log.args.error.valueOf(), expectedError, "unexpected error");
-    }    
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -16,10 +16,10 @@ module.exports.CheckEvents = function ( result, eventStrings, expectedErrors ) {
     for (var i = 0; i < result.logs.length; i++) {
         // If this callback is called, the transaction was successfully processed.
         var log = result.logs[i];
-        
+
         assert.equal(log.event, eventStrings[i], "unexpected event");
         assert.equal(log.args.error.valueOf(), expectedErrors[i], "unexpected error");
-    }    
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -37,78 +37,74 @@ module.exports.CheckThatThereWasAnEvents = function ( result ) {
 ////////////////////////////////////////////////////////////////////////////////
 
 var BigNumber = require('bignumber.js');
-var Web3 = require('web3');
 function mineOneBlock(dummyAccount) {
-    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-    web3.eth.sendTransaction({from:dummyAccount,to:dummyAccount}, function(err, address) {
-    if (err)
-       console.log(err); // "0x7f9fade1c0d57a7af66ab4ead7c2eb7b11a91385"
-    });
-    
-
-/*
-request.post(
-    'http://localhost:8545/jsonrpc',
-    { json: { "method": 'evm_mine' } },
-    function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            console.log(body)
-        }
-        else console.log(error);
-    }
-);*/
-
-/*
-    var rpc = require('node-json-rpc');
-     
-    var options = {
-      // int port of rpc server, default 5080 for http or 5433 for https 
-      port: 8545,
-      // string domain name or ip of rpc server, default '127.0.0.1' 
-      host: '127.0.0.1',
-      // string with default path, default '/' 
-      path: '/rpc',
-      // boolean false to turn rpc checks off, default true 
-      strict: false
-    };
-     
-    // Create a client object with options 
-    var client = new rpc.Client(options);
-    return client.call(
-          [{"jsonrpc": "2.0","method": "eth_blockNumber", "params": [],"id":0},{"method": "evm_mine", "params": null, "id": 1}],
-          function (err, res) {
-            if (err) { console.log(err); }
-            else { console.log("good"); }
+  return new Promise(function(fulfill, reject){
+          web3.eth.sendTransaction({to: dummyAccount, from: dummyAccount,}, function(error, result){
+          if( error ) {
+              return reject(error);
           }
-        );*/
+          else {
+              return fulfill(true);
+          }
+      });
+  });
 }
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-module.exports.mineBlocks =  function( numBlocks, dummyAccount ) {
-    for( var i = 0 ; i < numBlocks ; i++ ) {
-        mineOneBlock(dummyAccount);
-    }
+module.exports.mineBlocksWithPromise =  function( numBlocks, dummyAccount ) {
+  return new Promise(function (fulfill, reject){
+
+      var inputs = [];
+
+      for (var i = 0 ; i < numBlocks ; i++ ) {
+          inputs.push(i);
+      }
+
+     return inputs.reduce(function (promise, item) {
+      return promise.then(function () {
+          return mineOneBlock(dummyAccount);
+      });
+
+      }, Promise.resolve()).then(function(){
+          fulfill(true);
+      }).catch(function(err){
+          reject(err);
+      });
+  });
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
 
-module.exports.SendEther =  function( fromAddress, toAddress, valueInEther ) {
-    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-    var valueToSend = web3.toWei(valueInEther, "ether");
-    web3.eth.sendTransaction({from:fromAddress.toString(),to:toAddress.toString(),value:valueToSend}, function(err, address) {
-    if (err)
-       console.log(err); // "0x7f9fade1c0d57a7af66ab4ead7c2eb7b11a91385"
+module.exports.sendEtherWithPromise = function( sender, recv, valueInEther ) {
+    var amount = web3.toWei(valueInEther);
+    return new Promise(function(fulfill, reject){
+            web3.eth.sendTransaction({to: recv, from: sender, value: amount}, function(error, result){
+            if( error ) {
+                return reject(error);
+            }
+            else {
+                return fulfill(true);
+            }
+        });
     });
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
-module.exports.GetBalance =  function( address, callback ) {
-    var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-    web3.eth.getBalance(address, callback);    
+module.exports.GetBalanceWithPromise =  function( address, callback ) {
+  return new Promise(function(fulfill, reject){
+          web3.eth.getBalance(address, function(error, result){
+          if( error ) {
+              return reject(error);
+          }
+          else {
+              return fulfill(result);
+          }
+      });
+  });
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -144,7 +140,7 @@ function VerifyClaimInput( rlpHeader,
     this.augCountersBranchArray = [];
 
     var i;
-    
+
     for( i = 0 ; i < dataSetLookupArray.length ; i++ ) {
         this.dataSetLookup.push(new BigNumber(dataSetLookupArray[i]));
     }
@@ -156,7 +152,7 @@ function VerifyClaimInput( rlpHeader,
     }
     for( i = 0 ; i < augCountersBranchArray.length ; i++ ) {
         this.augCountersBranchArray.push(new BigNumber(augCountersBranchArray[i]));
-    }                                   
+    }
 }
 
 module.exports.VerifyClaimInput = function( rlpHeader,
@@ -183,7 +179,7 @@ function SetEpochDataInput( epoch, fullSizeIn128Resultion, branchDepth, start, n
     this.fullSizeIn128Resultion = new BigNumber(fullSizeIn128Resultion);
     this.branchDepth = new BigNumber(branchDepth);
     this.start = new BigNumber(start);
-    this.numElems = new BigNumber(numElems);        
+    this.numElems = new BigNumber(numElems);
     this.merkleNodes = [];
     for( var i = 0 ; i < merkleNodes.length ; i++ ) {
         this.merkleNodes.push(new BigNumber(merkleNodes[i]));
@@ -203,15 +199,15 @@ function VerifyAgtInput( rootHash,
                          leafCounter,
                          branchIndex,
                          countersBranch,
-                         hashesBranch ) { 
+                         hashesBranch ) {
     this.rootHash = rootHash;
     this.rootMin = rootMin;
     this.rootMax = rootMax;
     this.leafHash = leafHash;
     this.leafCounter = leafCounter;
-    this.branchIndex = branchIndex;    
-    this.countersBranch = countersBranch;    
-    this.hashesBranch = hashesBranch;    
+    this.branchIndex = branchIndex;
+    this.countersBranch = countersBranch;
+    this.hashesBranch = hashesBranch;
 }
 
 module.exports.VerifyAgtInput = function( rootHash,
@@ -238,8 +234,7 @@ module.exports.ExpectedPayment = function( numShares, shareDifficulty, networkDi
     var etherPayment = (5.0 * numShares * shareDifficulty) / networkDifficulty;
     etherPayment = etherPayment * (1-0.25*uncleRate);
     etherPayment = etherPayment * (1-poolFee);
-    
-    return web3.toWei(new BigNumber(etherPayment.toString()), "ether");
+    return new BigNumber(web3.toWei(new BigNumber(etherPayment.toString()), "ether"));
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -252,18 +247,16 @@ module.exports.ExpectedPaymentForMultiSubmissions = function( numSharesArray,
     numSubmissions = numSharesArray.length;
     sumNetworkDiff = 0;
     sumNumShares = 0;
-    
+
     for( var i = 0 ; i < numSubmissions ; i++ ) {
         sumNumShares += numSharesArray[i];
         sumNetworkDiff += networkDifficultyArray[i] * numSharesArray[i];
     }
-    
+
     var averageNetworkDiff = parseInt( (sumNetworkDiff / sumNumShares).toString() );
-    
+
     return module.exports.ExpectedPayment( sumNumShares, averageNetworkDiff, uncleRate, poolFee );
 };
 
 
 ////////////////////////////////////////////////////////////////////////////////
-
-

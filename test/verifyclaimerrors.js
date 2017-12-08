@@ -14,26 +14,26 @@ var shareIndex;
 var submissionIndex;
 
 contract('TestPool_verifyclaimerros', function(accounts) {
-  
+
   beforeEach(function(done){
     done();
   });
   afterEach(function(done){
     done();
   });
-    
+
   it("Create ethash", function() {
     return Ethash.new([accounts[0],accounts[1],accounts[2]],{from:accounts[8]}).then(function(instance){
         ethash = instance;
-    });    
+    });
   });
-    
+
 
   it("Create new pool", function() {
     return TestPool.new([accounts[0],accounts[1],accounts[2]],ethash.address,accounts[7],false,false,{from:accounts[9]}).then(function(instance){
         pool = instance;
         assert.equal(pool.address, parseInt(poolAddressString), "unexpected pool contract address");
-    });    
+    });
   });
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,19 +48,19 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x8400000c );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x8400000c );
     });
   });
 
 
-////////////////////////////////////////////////////////////////////////////////  
-  
+////////////////////////////////////////////////////////////////////////////////
+
   it("Register", function() {
     return pool.register(accounts[1],{from:accounts[0]}).then(function(result){
         helpers.CheckEvent( result, "Register", 0 );
     });
   });
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
   it("Verify before submit claim", function() {
@@ -73,10 +73,10 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000003 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000003 );
     });
   });
-  
+
 ////////////////////////////////////////////////////////////////////////////////
 
   it("Submit claim", function() {
@@ -103,7 +103,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x8400000a );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x8400000a );
     });
   });
 
@@ -123,7 +123,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                                  helpers.CheckEvent( result, "SetEpochData", 0 );
                              });
     }
-    
+
     return null;
   });
 
@@ -140,7 +140,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000001 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000001 );
     });
   });
 
@@ -163,9 +163,9 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
         helpers.CheckEvents( result, ["VerifyExtraData","VerifyClaim"], [0x83000000,0x84000004] );
-        
-        
-        
+
+
+
     });
   });
 
@@ -181,9 +181,9 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
         helpers.CheckEvents( result, ["VerifyExtraData","VerifyClaim"], [0x83000001,0x84000004] );
-        
-        
-        
+
+
+
     });
   });
 
@@ -198,7 +198,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000005 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000005 );
     });
   });
 
@@ -213,7 +213,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000007 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000007 );
     });
   });
 
@@ -228,7 +228,7 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000008 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000008 );
     });
   });
 
@@ -258,30 +258,31 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x8400000b );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x8400000b );
     });
   });
 
 
   it("Get share index", function() {
-    helpers.mineBlocks(26,accounts[7]);
-    return pool.getShareIndexDebugForTestRPC(accounts[0]).then(function(result){
+    return helpers.mineBlocksWithPromise(26,accounts[7]).then(function(){
+      return pool.getShareIndexDebugForTestRPC(accounts[0]);
+    }).then(function(result){
             assert.equal(result.logs.length, 2, "expected two events");
             assert.equal(result.logs[0].event, "GetShareIndexDebugForTestRPCSubmissionIndex", "expected getShareIndexDebugForTestRPC");
             assert.equal(result.logs[1].event, "GetShareIndexDebugForTestRPCShareIndex", "expected getShareIndexDebugForTestRPC");
 
-            submissionIndex = new BigNumber(result.logs[0].args.index);        
-            shareIndex = new BigNumber(result.logs[1].args.index);            
+            submissionIndex = new BigNumber(result.logs[0].args.index);
+            shareIndex = new BigNumber(result.logs[1].args.index);
     });
   });
 
 /* this will be verified in verify3claimssuccesful.js
-  it("Verify claim with wrong submission index", function() {  
+  it("Verify claim with wrong submission index", function() {
     // Sending and receiving data in JSON format using POST mothod
     var index;
     if( submissionIndex > 0 ) index = submissionIndex - 1;
     else index = 1;
-    
+
     var verifyClaimInput = inputs.getValidClaimVerificationInput(shareIndex);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
@@ -291,17 +292,17 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );
     });
   });
 */
 
-  it("Verify claim with wrong share index", function() {  
+  it("Verify claim with wrong share index", function() {
     // Sending and receiving data in JSON format using POST mothod
     var index;
     if( shareIndex > 0 ) index = shareIndex - 1;
     else index = 1;
-    
+
     var verifyClaimInput = inputs.getValidClaimVerificationInput(index);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
                             verifyClaimInput.nonce,
@@ -311,12 +312,12 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000002 );
     });
   });
 
 
-  it("Verify claim in time with zero balance", function() {  
+  it("Verify claim in time with zero balance", function() {
     // Sending and receiving data in JSON format using POST mothod
     var verifyClaimInput = inputs.getValidClaimVerificationInput(shareIndex);
     return pool.verifyClaim(verifyClaimInput.rlpHeader,
@@ -327,10 +328,9 @@ contract('TestPool_verifyclaimerros', function(accounts) {
                             verifyClaimInput.witnessForLookup,
                             verifyClaimInput.augCountersBranchArray,
                             verifyClaimInput.augHashesBranch, {from:accounts[0]} ).then(function(result){
-        helpers.CheckEvent( result, "VerifyClaim", 0x84000000 );        
+        helpers.CheckEvent( result, "VerifyClaim", 0x84000000 );
     });
   });
 
-////////////////////////////////////////////////////////////////////////////////  
+////////////////////////////////////////////////////////////////////////////////
 });
-

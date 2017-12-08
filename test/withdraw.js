@@ -3,7 +3,7 @@ var BigNumber = require('bignumber.js');
 const helpers = require('./helpers');
 
 var TestPool = artifacts.require("./SmartPool.sol");
-var Debug = artifacts.require("./Debug.sol");
+var Debug = artifacts.require("./SmartPool.sol");
 var Ethash = artifacts.require("./Ethash.sol");
 
 
@@ -25,7 +25,7 @@ contract('TestPool_withdraw', function(accounts) {
   it("Create ethash", function() {
     return Ethash.new([accounts[0],accounts[1],accounts[2]],{from:accounts[8]}).then(function(instance){
         ethash = instance;
-    });    
+    });
   });
 
 
@@ -36,21 +36,22 @@ contract('TestPool_withdraw', function(accounts) {
       return Debug.new(pool.address,{from:accounts[8]});
     }).then(function(instance){
       debug = instance;
-      helpers.SendEther(accounts[2],pool.address.toString(),poolFunds / (10**18));
+      return helpers.sendEtherWithPromise(accounts[2],pool.address.toString(),poolFunds / (10**18));
+    }).then(function(){
       return pool.getPoolBalance();
     }).then(function(result){
         poolBalance = result.toString(10);
-        assert.equal(poolBalance,poolFunds.toString(), "unexpected pool balance" );    
+        assert.equal(poolBalance,poolFunds.toString(), "unexpected pool balance" );
     });
   });
-  
+
 ////////////////////////////////////////////////////////////////////////////////
-  
+
   it("withdraw half", function() {
     var balanceBefore;
     var withdrawalAmount = parseInt(poolFunds / 2);
-    return debug.getUserBalance(multisig).then(function(result){
-        balanceBefore = result.logs[0].args.result;
+    return helpers.GetBalanceWithPromise(multisig).then(function(result){
+        balanceBefore = result;
         return pool.withdraw( withdrawalAmount, {from:accounts[0]});
     }).then(function(result){
         return pool.getPoolBalance();
@@ -58,14 +59,14 @@ contract('TestPool_withdraw', function(accounts) {
         assert.equal(parseInt(result.toString(10)),
                      poolFunds - withdrawalAmount,
                      "unexpected pool balance" );
-        return debug.getUserBalance(multisig);
+        return helpers.GetBalanceWithPromise(multisig);
     }).then(function(result2){
-        var balanceAfter = result2.logs[0].args.result.toString(10);
+        var balanceAfter = result2;
         var expectedBalance = balanceBefore.add(new BigNumber(withdrawalAmount));
-        assert.equal(balanceAfter.toString(10), expectedBalance.toString(10), "unexpected multisig balance" );    
+        assert.equal(balanceAfter.toString(10), expectedBalance.toString(10), "unexpected multisig balance" );
     });
   });
-  
+
   it("withdraw without premission", function() {
     var balanceBefore;
     var withdrawalAmount = parseInt(poolFunds / 2);
@@ -81,12 +82,12 @@ contract('TestPool_withdraw', function(accounts) {
                      "unexpected pool balance" );
     });
   });
-  
+
   it("withdraw all", function() {
     var balanceBefore;
     var withdrawalAmount = poolFunds - parseInt(poolFunds / 2);
-    return debug.getUserBalance(multisig).then(function(result){
-        balanceBefore = result.logs[0].args.result;
+    return helpers.GetBalanceWithPromise(multisig).then(function(result){
+        balanceBefore = result;
         return pool.withdraw( withdrawalAmount, {from:accounts[0]});
     }).then(function(result){
         return pool.getPoolBalance();
@@ -94,11 +95,11 @@ contract('TestPool_withdraw', function(accounts) {
         assert.equal(parseInt(result.toString(10)),
                      0,
                      "unexpected pool balance" );
-        return debug.getUserBalance(multisig);
+        return helpers.GetBalanceWithPromise(multisig);
     }).then(function(result2){
-        var balanceAfter = result2.logs[0].args.result.toString(10);
+        var balanceAfter = result2;
         var expectedBalance = balanceBefore.add(new BigNumber(withdrawalAmount));
-        assert.equal(balanceAfter.toString(10), expectedBalance.toString(10), "unexpected multisig balance" );    
+        assert.equal(balanceAfter.toString(10), expectedBalance.toString(10), "unexpected multisig balance" );
     });
-  });    
+  });
 });
