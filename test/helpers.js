@@ -231,7 +231,7 @@ module.exports.VerifyAgtInput = function( rootHash,
 ////////////////////////////////////////////////////////////////////////////////
 
 module.exports.ExpectedPayment = function( numShares, shareDifficulty, networkDifficulty, uncleRate, poolFee ) {
-    var etherPayment = (5.0 * numShares * shareDifficulty) / networkDifficulty;
+    var etherPayment = (3.0 * numShares * shareDifficulty) / networkDifficulty;
     etherPayment = etherPayment * (1-0.25*uncleRate);
     etherPayment = etherPayment * (1-poolFee);
     return new BigNumber(web3.toWei(new BigNumber(etherPayment.toString()), "ether"));
