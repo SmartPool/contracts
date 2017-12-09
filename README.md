@@ -6,7 +6,7 @@ A set of test code for the contracts is included.  Use the following steps to ru
 
 These tests requre a recent (v7 at least) version of node.  v7.10.0 is known to work although more recent ones should also work.
 
-1. Install dependancies: `npm install`
+1. Install dependancies: `npm install` (`sudo` might be needed on ubuntu OS)
 2. Run: `npm test`
 
 Alternatively, you can run the commands manually:
