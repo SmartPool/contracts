@@ -66,7 +66,7 @@ contract('TestPool_submit', function(accounts) {
     var prevBlockDiff = new BigNumber(900000000);
   
     var ether = (new BigNumber(10).pow(18));
-    var blockReward = ether.mul(5);
+    var blockReward = ether.mul(3);
         
     var thisBlockDiff = prevBlockDiff.mul(2);
     var nextBlockDiff = prevBlockDiff.mul(3);
