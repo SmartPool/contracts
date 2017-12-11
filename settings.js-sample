@@ -1,0 +1,12 @@
+// SmartPool Deploy settings.
+
+funding = [eth.accounts[0], 4500000];
+o1="";
+o2="";
+o3="";
+wAddr="";
+
+etHash = "";
+sAddr = "";
+gateAddr = "";
+
