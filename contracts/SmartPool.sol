@@ -1,6 +1,6 @@
-pragma solidity ^0.4.13;
+pragma solidity ^0.4.17;
 
-//solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol 
+//solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol
 
 
 import "./Ethash.sol";
@@ -38,7 +38,7 @@ library RLP {
 
  /* Iterator */
 
- function next(Iterator memory self) internal constant returns (RLPItem memory subItem) {
+ function next(Iterator memory self) internal pure returns (RLPItem memory subItem) {
      if(hasNext(self)) {
          var ptr = self._unsafe_nextPtr;
          var itemLength = _itemLength(ptr);
@@ -50,14 +50,14 @@ library RLP {
          revert();
  }
 
- function next(Iterator memory self, bool strict) internal constant returns (RLPItem memory subItem) {
+ function next(Iterator memory self, bool strict) internal pure returns (RLPItem memory subItem) {
      subItem = next(self);
      if(strict && !_validate(subItem))
          revert();
      return;
  }
 
- function hasNext(Iterator memory self) internal constant returns (bool) {
+ function hasNext(Iterator memory self) internal pure returns (bool) {
      var item = self._unsafe_item;
      return self._unsafe_nextPtr < item._unsafe_memPtr + item._unsafe_length;
  }
@@ -67,7 +67,7 @@ library RLP {
  /// @dev Creates an RLPItem from an array of RLP encoded bytes.
  /// @param self The RLP encoded bytes.
  /// @return An RLPItem
- function toRLPItem(bytes memory self) internal constant returns (RLPItem memory) {
+ function toRLPItem(bytes memory self) internal pure returns (RLPItem memory) {
      uint len = self.length;
      if (len == 0) {
          return RLPItem(0, 0);
@@ -83,7 +83,7 @@ library RLP {
  /// @param self The RLP encoded bytes.
  /// @param strict Will throw if the data is not RLP encoded.
  /// @return An RLPItem
- function toRLPItem(bytes memory self, bool strict) internal constant returns (RLPItem memory) {
+ function toRLPItem(bytes memory self, bool strict) internal pure returns (RLPItem memory) {
      var item = toRLPItem(self);
      if(strict) {
          uint len = self.length;
@@ -100,14 +100,14 @@ library RLP {
  /// @dev Check if the RLP item is null.
  /// @param self The RLP item.
  /// @return 'true' if the item is null.
- function isNull(RLPItem memory self) internal constant returns (bool ret) {
+ function isNull(RLPItem memory self) internal pure returns (bool ret) {
      return self._unsafe_length == 0;
  }
 
  /// @dev Check if the RLP item is a list.
  /// @param self The RLP item.
  /// @return 'true' if the item is a list.
- function isList(RLPItem memory self) internal constant returns (bool ret) {
+ function isList(RLPItem memory self) internal pure returns (bool ret) {
      if (self._unsafe_length == 0)
          return false;
      uint memPtr = self._unsafe_memPtr;
@@ -119,7 +119,7 @@ library RLP {
  /// @dev Check if the RLP item is data.
  /// @param self The RLP item.
  /// @return 'true' if the item is data.
- function isData(RLPItem memory self) internal constant returns (bool ret) {
+ function isData(RLPItem memory self) internal pure returns (bool ret) {
      if (self._unsafe_length == 0)
          return false;
      uint memPtr = self._unsafe_memPtr;
@@ -131,7 +131,7 @@ library RLP {
  /// @dev Check if the RLP item is empty (string or list).
  /// @param self The RLP item.
  /// @return 'true' if the item is null.
- function isEmpty(RLPItem memory self) internal constant returns (bool ret) {
+ function isEmpty(RLPItem memory self) internal pure returns (bool ret) {
      if(isNull(self))
          return false;
      uint b0;
@@ -145,7 +145,7 @@ library RLP {
  /// @dev Get the number of items in an RLP encoded list.
  /// @param self The RLP item.
  /// @return The number of items.
- function items(RLPItem memory self) internal constant returns (uint) {
+ function items(RLPItem memory self) internal pure returns (uint) {
      if (!isList(self))
          return 0;
      uint b0;
@@ -166,7 +166,7 @@ library RLP {
  /// @dev Create an iterator.
  /// @param self The RLP item.
  /// @return An 'Iterator' over the item.
- function iterator(RLPItem memory self) internal constant returns (Iterator memory it) {
+ function iterator(RLPItem memory self) internal pure returns (Iterator memory it) {
      if (!isList(self))
          revert();
      uint ptr = self._unsafe_memPtr + _payloadOffset(self);
@@ -203,7 +203,7 @@ library RLP {
  /// Warning: This is inefficient, as it requires that the list is read twice.
  /// @param self The RLP item.
  /// @return Array of RLPItems.
- function toList(RLPItem memory self) internal constant returns (RLPItem[] memory list) {
+ function toList(RLPItem memory self) internal pure returns (RLPItem[] memory list) {
      if(!isList(self))
          revert();
      var numItems = items(self);
@@ -221,7 +221,7 @@ library RLP {
  /// @param self The RLPItem.
  /// @return The decoded string.
  /*
- function toAscii(RLPItem memory self) internal constant returns (string memory str) {
+ function toAscii(RLPItem memory self) internal pure returns (string memory str) {
      if(!isData(self))
          revert();
      var (rStartPos, len) = _decode(self);
@@ -234,7 +234,7 @@ library RLP {
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
- function toUint(RLPItem memory self) internal constant returns (uint data) {
+ function toUint(RLPItem memory self) internal pure returns (uint data) {
      if(!isData(self))
          revert();
      var (rStartPos, len) = _decode(self);
@@ -249,7 +249,7 @@ library RLP {
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
- function toBool(RLPItem memory self) internal constant returns (bool data) {
+ function toBool(RLPItem memory self) internal pure returns (bool data) {
      if(!isData(self))
          revert();
      var (rStartPos, len) = _decode(self);
@@ -268,7 +268,7 @@ library RLP {
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
- function toByte(RLPItem memory self) internal constant returns (byte data) {
+ function toByte(RLPItem memory self) internal pure returns (byte data) {
      if(!isData(self))
          revert();
      var (rStartPos, len) = _decode(self);
@@ -285,7 +285,7 @@ library RLP {
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
- function toInt(RLPItem memory self) internal constant returns (int data) {
+ function toInt(RLPItem memory self) internal pure returns (int data) {
      return int(toUint(self));
  }
 
@@ -293,7 +293,7 @@ library RLP {
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
- function toBytes32(RLPItem memory self) internal constant returns (bytes32 data) {
+ function toBytes32(RLPItem memory self) internal pure returns (bytes32 data) {
      return bytes32(toUint(self));
  }
 
@@ -301,7 +301,7 @@ library RLP {
  /// RLPItem is a list.
  /// @param self The RLPItem.
  /// @return The decoded string.
- function toAddress(RLPItem memory self) internal constant returns (address data) {
+ function toAddress(RLPItem memory self) internal pure returns (address data) {
      if(!isData(self))
          revert();
      var (rStartPos, len) = _decode(self);
@@ -313,7 +313,7 @@ library RLP {
  }
 
  // Get the payload offset.
- function _payloadOffset(RLPItem memory self) private constant returns (uint) {
+ function _payloadOffset(RLPItem memory self) private pure returns (uint) {
      if(self._unsafe_length == 0)
          return 0;
      uint b0;
@@ -331,7 +331,7 @@ library RLP {
  }
 
  // Get the full length of an RLP item.
- function _itemLength(uint memPtr) private constant returns (uint len) {
+ function _itemLength(uint memPtr) private pure returns (uint len) {
      uint b0;
      assembly {
          b0 := byte(0, mload(memPtr))
@@ -359,7 +359,7 @@ library RLP {
  }
 
  // Get start position and length of the data.
- function _decode(RLPItem memory self) private constant returns (uint memPtr, uint len) {
+ function _decode(RLPItem memory self) private pure returns (uint memPtr, uint len) {
      if(!isData(self))
          revert();
      uint b0;
@@ -387,8 +387,8 @@ library RLP {
  }
 
  // Assumes that enough memory has been allocated to store in target.
- /* this code is commented because I am too lazy to fix it to prevent jumpi warning, and since I don't use it anyway, I might as well just remove it. 
- function _copyToBytes(uint btsPtr, bytes memory tgt, uint btsLen) private constant {
+ /* this code is commented because I am too lazy to fix it to prevent jumpi warning, and since I don't use it anyway, I might as well just remove it.
+ function _copyToBytes(uint btsPtr, bytes memory tgt, uint btsLen) private pure {
      // Exploiting the fact that 'tgt' was the last thing to be allocated,
      // we can write entire words, and just overwrite any excess.
      assembly {
@@ -412,7 +412,7 @@ library RLP {
  }*/
 
      // Check that an RLP item is valid.
-     function _validate(RLPItem memory self) private constant returns (bool ret) {
+     function _validate(RLPItem memory self) private pure returns (bool ret) {
          // Check that RLP is well-formed.
          uint b0;
          uint b1;
@@ -434,7 +434,7 @@ contract Agt {
     using RLP for RLP.RLPItem;
     using RLP for RLP.Iterator;
     using RLP for bytes;
- 
+
     struct BlockHeader {
         uint       prevBlockHash; // 0
         uint       coinbase;      // 1
@@ -443,13 +443,13 @@ contract Agt {
         uint       timestamp;     // 11
         bytes32    extraData;     // 12
     }
- 
-    function Agt() {}
-     
-    function parseBlockHeader( bytes rlpHeader ) constant internal returns(BlockHeader) {
+
+    function Agt() public {}
+
+    function parseBlockHeader( bytes rlpHeader ) pure internal returns(BlockHeader) {
         BlockHeader memory header;
-        
-        var it = rlpHeader.toRLPItem().iterator();        
+
+        var it = rlpHeader.toRLPItem().iterator();
         uint idx;
         while(it.hasNext()) {
             if( idx == 0 ) header.prevBlockHash = it.next().toUint();
@@ -458,68 +458,68 @@ contract Agt {
             else if ( idx == 11 ) header.timestamp = it.next().toUint();
             else if ( idx == 12 ) header.extraData = bytes32(it.next().toUint());
             else it.next();
-            
+
             idx++;
         }
- 
-        return header;        
+
+        return header;
     }
-            
+
     //event VerifyAgt( string msg, uint index );
-    event VerifyAgt( uint error, uint index );    
-    
+    event VerifyAgt( uint error, uint index );
+
     struct VerifyAgtData {
         uint rootHash;
         uint rootMin;
         uint rootMax;
-        
+
         uint leafHash;
-        uint leafCounter;        
+        uint leafCounter;
     }
 
     function verifyAgt( VerifyAgtData data,
                         uint   branchIndex,
                         uint[] countersBranch,
-                        uint[] hashesBranch ) constant internal returns(bool) {
-                        
+                        uint[] hashesBranch ) internal returns(bool) {
+
         uint currentHash = data.leafHash & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-        
+
         uint leftCounterMin;
-        uint leftCounterMax;        
+        uint leftCounterMax;
         uint leftHash;
-        
+
         uint rightCounterMin;
-        uint rightCounterMax;        
+        uint rightCounterMax;
         uint rightHash;
-        
+
         uint min = data.leafCounter;
         uint max = data.leafCounter;
-        
+
         for( uint i = 0 ; i < countersBranch.length ; i++ ) {
             if( branchIndex & 0x1 > 0 ) {
                 leftCounterMin = countersBranch[i] & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-                leftCounterMax = countersBranch[i] >> 128;                
+                leftCounterMax = countersBranch[i] >> 128;
                 leftHash    = hashesBranch[i];
-                
+
                 rightCounterMin = min;
                 rightCounterMax = max;
-                rightHash    = currentHash;                
+                rightHash    = currentHash;
             }
-            else {                
+            else {
                 leftCounterMin = min;
                 leftCounterMax = max;
                 leftHash    = currentHash;
-                
+
                 rightCounterMin = countersBranch[i] & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-                rightCounterMax = countersBranch[i] >> 128;                
-                rightHash    = hashesBranch[i];                                            
+                rightCounterMax = countersBranch[i] >> 128;
+                rightHash    = hashesBranch[i];
             }
-            
-            currentHash = uint(sha3(leftCounterMin + (leftCounterMax << 128),
+
+            currentHash = uint(keccak256(leftCounterMin + (leftCounterMax << 128),
                                     leftHash,
                                     rightCounterMin + (rightCounterMax << 128),
                                     rightHash)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-            
+
             if( (leftCounterMin >= leftCounterMax) || (rightCounterMin >= rightCounterMax) ) {
                 if( i > 0 ) {
                     //VerifyAgt( "counters mismatch",i);
@@ -528,47 +528,47 @@ contract Agt {
                 }
                 if( leftCounterMin > leftCounterMax ) {
                     //VerifyAgt( "counters mismatch",i);
-                    VerifyAgt( 0x80000001, i );                
+                    VerifyAgt( 0x80000001, i );
                     return false;
                 }
                 if( rightCounterMin > rightCounterMax ) {
                     //VerifyAgt( "counters mismatch",i);
-                    VerifyAgt( 0x80000002, i );                
+                    VerifyAgt( 0x80000002, i );
                     return false;
-                }                
+                }
             }
-            
+
             if( leftCounterMax >= rightCounterMin ) {
-                VerifyAgt( 0x80000009, i );            
+                VerifyAgt( 0x80000009, i );
                 return false;
             }
 
             min = leftCounterMin;
             max = rightCounterMax;
-            
+
             branchIndex = branchIndex / 2;
         }
 
         if( min != data.rootMin ) {
             //VerifyAgt( "min does not match root min",min);
-            VerifyAgt( 0x80000003, min );                        
+            VerifyAgt( 0x80000003, min );
             return false;
         }
         if( max != data.rootMax ) {
             //VerifyAgt( "max does not match root max",max);
-            VerifyAgt( 0x80000004, max );                    
+            VerifyAgt( 0x80000004, max );
             return false;
         }
-        
+
         if( currentHash != data.rootHash ) {
-            //VerifyAgt( "hash does not match root hash",currentHash);        
+            //VerifyAgt( "hash does not match root hash",currentHash);
             VerifyAgt( 0x80000005, currentHash );
             return false;
         }
-        
+
         return true;
     }
-    
+
     function verifyAgtDebugForTesting( uint rootHash,
                                        uint rootMin,
                                        uint rootMax,
@@ -576,22 +576,22 @@ contract Agt {
                                        uint leafCounter,
                                        uint branchIndex,
                                        uint[] countersBranch,
-                                       uint[] hashesBranch ) returns(bool) {
-                                       
+                                       uint[] hashesBranch ) public returns(bool) {
+
         VerifyAgtData memory data;
         data.rootHash = rootHash;
         data.rootMin = rootMin;
         data.rootMax = rootMax;
         data.leafHash = leafHash;
         data.leafCounter = leafCounter;
-        
+
         return verifyAgt( data, branchIndex, countersBranch, hashesBranch );
-    }         
+    }
 }
 
 contract WeightedSubmission {
-    function WeightedSubmission(){}
-    
+    function WeightedSubmission() public {}
+
     struct SingleSubmissionData {
         uint128 numShares;
         uint128 submissionValue;
@@ -600,7 +600,7 @@ contract WeightedSubmission {
         uint128 max;
         uint128 augRoot;
     }
-    
+
     struct SubmissionMetaData {
         uint64  numPendingSubmissions;
         uint32  readyForVerification; // suppose to be bool
@@ -608,61 +608,61 @@ contract WeightedSubmission {
         uint128 totalSubmissionValue;
         uint128 difficulty;
         uint128 lastCounter;
-        
+
         uint    submissionSeed;
-        
+
     }
-    
+
     mapping(address=>SubmissionMetaData) submissionsMetaData;
-    
+
     // (user, submission number)=>data
     mapping(address=>mapping(uint=>SingleSubmissionData)) submissionsData;
-    
+
     event SubmitClaim( address indexed sender, uint error, uint errorInfo );
-    function submitClaim( uint numShares, uint difficulty, uint min, uint max, uint augRoot, bool lastClaimBeforeVerification ) {
+    function submitClaim( uint numShares, uint difficulty, uint min, uint max, uint augRoot, bool lastClaimBeforeVerification ) public {
         SubmissionMetaData memory metaData = submissionsMetaData[msg.sender];
-        
+
         if( metaData.lastCounter >= min ) {
             // miner cheated. min counter is too low
-            SubmitClaim( msg.sender, 0x81000001, metaData.lastCounter ); 
-            return;        
-        }
-        
-        if( metaData.readyForVerification > 0 ) {
-            // miner cheated - should go verification first
-            SubmitClaim( msg.sender, 0x81000002, 0 ); 
+            SubmitClaim( msg.sender, 0x81000001, metaData.lastCounter );
             return;
         }
-        
+
+        if( metaData.readyForVerification > 0 ) {
+            // miner cheated - should go verification first
+            SubmitClaim( msg.sender, 0x81000002, 0 );
+            return;
+        }
+
         if( metaData.numPendingSubmissions > 0 ) {
             if( metaData.difficulty != difficulty ) {
                 // could not change difficulty before verification
-                SubmitClaim( msg.sender, 0x81000003, metaData.difficulty ); 
-                return;            
+                SubmitClaim( msg.sender, 0x81000003, metaData.difficulty );
+                return;
             }
         }
-        
+
         SingleSubmissionData memory submissionData;
-        
+
         submissionData.numShares = uint64(numShares);
         uint blockDifficulty;
         if( block.difficulty == 0 ) {
             // testrpc - fake increasing difficulty
-            blockDifficulty = (900000000 * (metaData.numPendingSubmissions+1)); 
+            blockDifficulty = (900000000 * (metaData.numPendingSubmissions+1));
         }
         else {
             blockDifficulty = block.difficulty;
         }
-        
+
         submissionData.submissionValue = uint128((uint(numShares * difficulty) * (3 ether)) / blockDifficulty);
-        
+
         submissionData.totalPreviousSubmissionValue = metaData.totalSubmissionValue;
         submissionData.min = uint128(min);
         submissionData.max = uint128(max);
         submissionData.augRoot = uint128(augRoot);
-        
+
         (submissionsData[msg.sender])[metaData.numPendingSubmissions] = submissionData;
-        
+
         // update meta data
         metaData.numPendingSubmissions++;
         metaData.lastSubmissionBlockNumber = uint32(block.number);
@@ -671,44 +671,44 @@ contract WeightedSubmission {
         metaData.readyForVerification = lastClaimBeforeVerification ? uint32(1) : uint32(0);
 
         uint128 temp128;
-        
-        
-        temp128 = metaData.totalSubmissionValue; 
+
+
+        temp128 = metaData.totalSubmissionValue;
 
         metaData.totalSubmissionValue += submissionData.submissionValue;
-        
+
         if( temp128 > metaData.totalSubmissionValue ) {
             // overflow in calculation
             // note that this code is reachable if user is dishonest and give false
             // report on his submission. but even without
             // this validation, user cannot benifit from the overflow
-            SubmitClaim( msg.sender, 0x81000005, 0 ); 
-            return;                                
+            SubmitClaim( msg.sender, 0x81000005, 0 );
+            return;
         }
-                
-        
+
+
         submissionsMetaData[msg.sender] = metaData;
-        
+
         // everything is ok
         SubmitClaim( msg.sender, 0, numShares * difficulty );
     }
 
-    function getClaimSeed(address sender) constant returns(uint){
+    function getClaimSeed(address sender) public constant returns(uint){
         SubmissionMetaData memory metaData = submissionsMetaData[sender];
         if( metaData.readyForVerification == 0 ) return 0;
-        
-        if( metaData.submissionSeed != 0 ) return metaData.submissionSeed; 
-        
+
+        if( metaData.submissionSeed != 0 ) return metaData.submissionSeed;
+
         uint lastBlockNumber = uint(metaData.lastSubmissionBlockNumber);
-        
+
         if( block.number > lastBlockNumber + 200 ) return 0;
         if( block.number <= lastBlockNumber + 15 ) return 0;
-                
+
         return uint(block.blockhash(lastBlockNumber + 10));
     }
-    
+
     event StoreClaimSeed( address indexed sender, uint error, uint errorInfo );
-    function storeClaimSeed( address miner ) {
+    function storeClaimSeed( address miner ) public {
         // anyone who is willing to pay gas fees can call this function
         uint seed = getClaimSeed( miner );
         if( seed != 0 ) {
@@ -716,11 +716,11 @@ contract WeightedSubmission {
             StoreClaimSeed( msg.sender, 0, uint(miner) );
             return;
         }
-        
+
         // else
         SubmissionMetaData memory metaData = submissionsMetaData[miner];
         uint lastBlockNumber = uint(metaData.lastSubmissionBlockNumber);
-                
+
         if( metaData.readyForVerification == 0 ) {
             // submission is not ready for verification
             StoreClaimSeed( msg.sender, 0x8000000, uint(miner) );
@@ -739,30 +739,30 @@ contract WeightedSubmission {
         }
     }
 
-    function verifySubmissionIndex( address sender, uint seed, uint submissionNumber, uint shareIndex ) constant returns(bool) {
+    function verifySubmissionIndex( address sender, uint seed, uint submissionNumber, uint shareIndex ) public constant returns(bool) {
         if( seed == 0 ) return false;
-    
+
         uint totalValue = uint(submissionsMetaData[sender].totalSubmissionValue);
         uint numPendingSubmissions = uint(submissionsMetaData[sender].numPendingSubmissions);
 
-        SingleSubmissionData memory submissionData = (submissionsData[sender])[submissionNumber];        
-        
+        SingleSubmissionData memory submissionData = (submissionsData[sender])[submissionNumber];
+
         if( submissionNumber >= numPendingSubmissions ) return false;
-        
+
         uint seed1 = seed & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         uint seed2 = seed / (2**128);
-        
+
         uint selectedValue = seed1 % totalValue;
         if( uint(submissionData.totalPreviousSubmissionValue) >= selectedValue ) return false;
-        if( uint(submissionData.totalPreviousSubmissionValue + submissionData.submissionValue) < selectedValue ) return false;  
+        if( uint(submissionData.totalPreviousSubmissionValue + submissionData.submissionValue) < selectedValue ) return false;
 
         uint expectedShareshareIndex = (seed2 % uint(submissionData.numShares));
         if( expectedShareshareIndex != shareIndex ) return false;
-        
+
         return true;
     }
-    
-    function calculateSubmissionIndex( address sender, uint seed ) constant returns(uint[2]) {
+
+    function calculateSubmissionIndex( address sender, uint seed ) public constant returns(uint[2]) {
         // this function should be executed off chain - hene, it is not optimized
         uint seed1 = seed & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         uint seed2 = seed / (2**128);
@@ -771,22 +771,22 @@ contract WeightedSubmission {
         uint numPendingSubmissions = uint(submissionsMetaData[sender].numPendingSubmissions);
 
         uint selectedValue = seed1 % totalValue;
-        
-        SingleSubmissionData memory submissionData;        
-        
+
+        SingleSubmissionData memory submissionData;
+
         for( uint submissionInd = 0 ; submissionInd < numPendingSubmissions ; submissionInd++ ) {
-            submissionData = (submissionsData[sender])[submissionInd];        
-            if( uint(submissionData.totalPreviousSubmissionValue + submissionData.submissionValue) >= selectedValue ) break;  
+            submissionData = (submissionsData[sender])[submissionInd];
+            if( uint(submissionData.totalPreviousSubmissionValue + submissionData.submissionValue) >= selectedValue ) break;
         }
-        
+
         // unexpected error
         if( submissionInd == numPendingSubmissions ) return [uint(0xFFFFFFFFFFFFFFFF),0xFFFFFFFFFFFFFFFF];
 
-        uint shareIndex = seed2 % uint(submissionData.numShares); 
-        
+        uint shareIndex = seed2 % uint(submissionData.numShares);
+
         return [submissionInd, shareIndex];
     }
-    
+
     // should be called only from verify claim
     function closeSubmission( address sender ) internal {
         SubmissionMetaData memory metaData = submissionsMetaData[sender];
@@ -794,14 +794,14 @@ contract WeightedSubmission {
         metaData.totalSubmissionValue = 0;
         metaData.readyForVerification = 0;
         metaData.submissionSeed = 0;
-        
+
         // last counter must not be reset
         // last submission block number and difficulty are also kept, but it is not a must
-        // only to save some gas        
-        
+        // only to save some gas
+
         submissionsMetaData[sender] = metaData;
     }
-    
+
     struct SubmissionDataForClaimVerification {
         uint lastCounter;
         uint shareDifficulty;
@@ -809,212 +809,212 @@ contract WeightedSubmission {
         uint min;
         uint max;
         uint augMerkle;
-        
+
         bool indicesAreValid;
         bool readyForVerification;
     }
-    
+
     function getClaimData( address sender, uint submissionIndex, uint shareIndex, uint seed )
                            constant internal returns(SubmissionDataForClaimVerification){
-                           
+
         SubmissionDataForClaimVerification memory output;
 
         SubmissionMetaData memory metaData = submissionsMetaData[sender];
-        
+
         output.lastCounter = uint(metaData.lastCounter);
         output.shareDifficulty = uint(metaData.difficulty);
         output.totalSubmissionValue = metaData.totalSubmissionValue;
-        
+
 
         SingleSubmissionData memory submissionData = (submissionsData[sender])[submissionIndex];
-        
+
         output.min = uint(submissionData.min);
         output.max = uint(submissionData.max);
         output.augMerkle = uint(submissionData.augRoot);
-        
+
         output.indicesAreValid = verifySubmissionIndex( sender, seed, submissionIndex, shareIndex );
         output.readyForVerification = (metaData.readyForVerification > 0);
-        
-        return output; 
+
+        return output;
     }
-    
-    function debugGetNumPendingSubmissions( address sender ) constant returns(uint) {
+
+    function debugGetNumPendingSubmissions( address sender ) public constant returns(uint) {
         return uint(submissionsMetaData[sender].numPendingSubmissions);
     }
-    
+
     event DebugResetSubmissions( address indexed sender, uint error, uint errorInfo );
-    function debugResetSubmissions( ) {
+    function debugResetSubmissions( ) public {
         // should be called only in emergency
         // msg.sender will loose all its pending shares
         closeSubmission(msg.sender);
         DebugResetSubmissions( msg.sender, 0, 0 );
-    }    
+    }
 }
 
 
-contract SmartPool is Agt, WeightedSubmission {    
+contract SmartPool is Agt, WeightedSubmission {
     string  public version = "0.1.1";
-    
-    Ethash  public ethashContract; 
+
+    Ethash  public ethashContract;
     address public withdrawalAddress;
-    mapping(address=>bool) public owners; 
-    
+    mapping(address=>bool) public owners;
+
     bool public newVersionReleased = false;
-        
+
     struct MinerData {
         bytes32        minerId;
         address        paymentAddress;
     }
 
     mapping(address=>MinerData) minersData;
-    mapping(bytes32=>bool)      public existingIds;        
-    
+    mapping(bytes32=>bool)      public existingIds;
+
     bool public whiteListEnabled;
     bool public blackListEnabled;
     mapping(address=>bool) whiteList;
-    mapping(address=>bool) blackList;    
-    
+    mapping(address=>bool) blackList;
+
     function SmartPool( address[] _owners,
                         Ethash _ethashContract,
                         address _withdrawalAddress,
                         bool _whiteListEnabled,
-                        bool _blackListEnabled ) payable {
-                        
+                        bool _blackListEnabled ) public payable {
+
         for( uint i = 0 ; i < _owners.length ; i++ ) {
-            owners[_owners[i]] = true; 
+            owners[_owners[i]] = true;
         }
-        
+
         ethashContract = _ethashContract;
         withdrawalAddress = _withdrawalAddress;
-        
+
         whiteListEnabled = _whiteListEnabled;
-        blackListEnabled = _blackListEnabled;               
+        blackListEnabled = _blackListEnabled;
     }
-    
-    function declareNewerVersion() {
+
+    function declareNewerVersion() public {
         require( owners[msg.sender] );
-        
+
         newVersionReleased = true;
-        
+
         //if( ! msg.sender.send(this.balance) ) throw;
     }
-    
+
     event Withdraw( address indexed sender, uint error, uint errorInfo );
-    function withdraw( uint amount ) {
+    function withdraw( uint amount ) public {
         if( ! owners[msg.sender] ) {
             // only ownder can withdraw
             Withdraw( msg.sender, 0x80000000, amount );
             return;
         }
-        
+
         withdrawalAddress.transfer( amount );
-        
-        Withdraw( msg.sender, 0, amount );            
+
+        Withdraw( msg.sender, 0, amount );
     }
-    
-    function to62Encoding( uint id, uint numChars ) constant returns(bytes32) {
+
+    function to62Encoding( uint id, uint numChars ) public pure returns(bytes32) {
         require( id < (26+26+10)**numChars );
         uint result = 0;
         for( uint i = 0 ; i < numChars ; i++ ) {
             uint b = id % (26+26+10);
             uint8 char;
             if( b < 10 ) {
-                char = uint8(b + 0x30); // 0x30 = '0' 
+                char = uint8(b + 0x30); // 0x30 = '0'
             }
             else if( b < 26 + 10 ) {
                 char = uint8(b + 0x61 - 10); //0x61 = 'a'
             }
             else {
-                char = uint8(b + 0x41 - 26 - 10); // 0x41 = 'A'         
+                char = uint8(b + 0x41 - 26 - 10); // 0x41 = 'A'
             }
-            
+
             result = (result * 256) + char;
             id /= (26+26+10);
         }
 
         return bytes32(result);
     }
-        
-    event Register( address indexed sender, uint error, uint errorInfo );    
-    function register( address paymentAddress ) {
+
+    event Register( address indexed sender, uint error, uint errorInfo );
+    function register( address paymentAddress ) public {
         address minerAddress = msg.sender;
-        
+
         // build id
-        uint id = uint(minerAddress) % (26+26+10)**11;        
+        uint id = uint(minerAddress) % (26+26+10)**11;
         bytes32 minerId = to62Encoding(id,11);
-        
+
         if( existingIds[minersData[minerAddress].minerId] ) {
             // miner id is already in use
-            Register( msg.sender, 0x80000000, uint(minerId) ); 
+            Register( msg.sender, 0x80000000, uint(minerId) );
             return;
         }
-        
+
         if( paymentAddress == address(0) ) {
             // payment address is 0
-            Register( msg.sender, 0x80000001, uint(paymentAddress) ); 
+            Register( msg.sender, 0x80000001, uint(paymentAddress) );
             return;
         }
-        
+
         if( whiteListEnabled ) {
             if( ! whiteList[ msg.sender ] ) {
                 // miner not in white list
                 Register( msg.sender, 0x80000002, uint(minerId) );
-                return;                 
+                return;
             }
         }
-        
+
         if( blackListEnabled ) {
             if( blackList[ msg.sender ] ) {
                 // miner on black list
                 Register( msg.sender, 0x80000003, uint(minerId) );
-                return;                 
-            }        
+                return;
+            }
         }
-        
-        
-        
-        // last counter is set to 0. 
+
+
+
+        // last counter is set to 0.
         // It might be safer to change it to now.
         //minersData[minerAddress].lastCounter = now * (2**64);
-        minersData[minerAddress].paymentAddress = paymentAddress;        
+        minersData[minerAddress].paymentAddress = paymentAddress;
         minersData[minerAddress].minerId = minerId;
         existingIds[minersData[minerAddress].minerId] = true;
-        
+
         // succesful registration
-        Register( msg.sender, 0, 0 ); 
+        Register( msg.sender, 0, 0 );
     }
 
-    function canRegister(address sender) constant returns(bool) {
+    function canRegister(address sender) public constant returns(bool) {
         uint id = uint(sender) % (26+26+10)**11;
         bytes32 expectedId = to62Encoding(id,11);
-        
+
         if( whiteListEnabled ) {
-            if( ! whiteList[ sender ] ) return false; 
+            if( ! whiteList[ sender ] ) return false;
         }
         if( blackListEnabled ) {
-            if( blackList[ sender ] ) return false;        
+            if( blackList[ sender ] ) return false;
         }
-        
+
         return ! existingIds[expectedId];
     }
-    
-    function isRegistered(address sender) constant returns(bool) {
+
+    function isRegistered(address sender) public constant returns(bool) {
         return minersData[sender].paymentAddress != address(0);
     }
-    
-    function getMinerId(address sender) constant returns(bytes32) {
+
+    function getMinerId(address sender) public constant returns(bytes32) {
         return minersData[sender].minerId;
     }
 
     event UpdateWhiteList( address indexed miner, uint error, uint errorInfo, bool add );
-    event UpdateBlackList( address indexed miner, uint error, uint errorInfo, bool add );    
+    event UpdateBlackList( address indexed miner, uint error, uint errorInfo, bool add );
 
     function unRegister( address miner ) internal {
         minersData[miner].paymentAddress = address(0);
-        existingIds[minersData[miner].minerId] = false;            
+        existingIds[minersData[miner].minerId] = false;
     }
-    
-    function updateWhiteList( address miner, bool add ) {
+
+    function updateWhiteList( address miner, bool add ) public {
         if( ! owners[ msg.sender ] ) {
             // only owner can update list
             UpdateWhiteList( msg.sender, 0x80000000, 0, add );
@@ -1022,20 +1022,20 @@ contract SmartPool is Agt, WeightedSubmission {
         }
         if( ! whiteListEnabled ) {
             // white list is not enabeled
-            UpdateWhiteList( msg.sender, 0x80000001, 0, add );        
+            UpdateWhiteList( msg.sender, 0x80000001, 0, add );
             return;
         }
-        
+
         whiteList[ miner ] = add;
         if( ! add && isRegistered( miner ) ) {
             // unregister
             unRegister( miner );
         }
-        
+
         UpdateWhiteList( msg.sender, 0, uint(miner), add );
     }
 
-    function updateBlackList( address miner, bool add ) {
+    function updateBlackList( address miner, bool add ) public {
         if( ! owners[ msg.sender ] ) {
             // only owner can update list
             UpdateBlackList( msg.sender, 0x80000000, 0, add );
@@ -1043,73 +1043,73 @@ contract SmartPool is Agt, WeightedSubmission {
         }
         if( ! blackListEnabled ) {
             // white list is not enabeled
-            UpdateBlackList( msg.sender, 0x80000001, 0, add );        
+            UpdateBlackList( msg.sender, 0x80000001, 0, add );
             return;
         }
-        
+
         blackList[ miner ] = add;
         if( add && isRegistered( miner ) ) {
             // unregister
             unRegister( miner );
         }
-        
+
         UpdateBlackList( msg.sender, 0, uint(miner), add );
     }
-    
-    event DisableBlackListForever( address indexed sender, uint error, uint errorInfo );    
-    function disableBlackListForever() {
+
+    event DisableBlackListForever( address indexed sender, uint error, uint errorInfo );
+    function disableBlackListForever() public {
         if( ! owners[ msg.sender ] ) {
             // only owner can update list
             DisableBlackListForever( msg.sender, 0x80000000, 0 );
             return;
         }
-        
+
         blackListEnabled = false;
-        
-        DisableBlackListForever( msg.sender, 0, 0 );        
+
+        DisableBlackListForever( msg.sender, 0, 0 );
     }
 
     event DisableWhiteListForever( address indexed sender, uint error, uint errorInfo );
-    function disableWhiteListForever() {
+    function disableWhiteListForever() public {
         if( ! owners[ msg.sender ] ) {
             // only owner can update list
             DisableWhiteListForever( msg.sender, 0x80000000, 0 );
             return;
         }
-        
+
         whiteListEnabled = false;
-        
-        DisableWhiteListForever( msg.sender, 0, 0 );            
+
+        DisableWhiteListForever( msg.sender, 0, 0 );
     }
-    
-    event VerifyExtraData( address indexed sender, uint error, uint errorInfo );    
-    function verifyExtraData( bytes32 extraData, bytes32 minerId, uint difficulty ) constant internal returns(bool) {
+
+    event VerifyExtraData( address indexed sender, uint error, uint errorInfo );
+    function verifyExtraData( bytes32 extraData, bytes32 minerId, uint difficulty ) internal returns(bool) {
         uint i;
         // compare id
         for( i = 0 ; i < 11 ; i++ ) {
             if( extraData[10+i] != minerId[21+i] ) {
                 //ErrorLog( "verifyExtraData: miner id not as expected", 0 );
-                VerifyExtraData( msg.sender, 0x83000000, uint(minerId) );         
-                return false;            
+                VerifyExtraData( msg.sender, 0x83000000, uint(minerId) );
+                return false;
             }
         }
-        
+
         // compare difficulty
         bytes32 encodedDiff = to62Encoding(difficulty,11);
         for( i = 0 ; i < 11 ; i++ ) {
             if(extraData[i+21] != encodedDiff[21+i]) {
                 //ErrorLog( "verifyExtraData: difficulty is not as expected", uint(encodedDiff) );
                 VerifyExtraData( msg.sender, 0x83000001, uint(encodedDiff) );
-                return false;            
-            }  
+                return false;
+            }
         }
-                
-        return true;            
-    }    
-    
+
+        return true;
+    }
+
     event VerifyClaim( address indexed sender, uint error, uint errorInfo );
-    
-        
+
+
     function verifyClaim( bytes rlpHeader,
                           uint  nonce,
                           uint  submissionIndex,
@@ -1117,23 +1117,23 @@ contract SmartPool is Agt, WeightedSubmission {
                           uint[] dataSetLookup,
                           uint[] witnessForLookup,
                           uint[] augCountersBranch,
-                          uint[] augHashesBranch ) {
+                          uint[] augHashesBranch ) public {
 
         if( ! isRegistered(msg.sender) ) {
             // miner is not registered
             VerifyClaim( msg.sender, 0x8400000c, 0 );
-            return;         
+            return;
         }
 
         SubmissionDataForClaimVerification memory submissionData = getClaimData( msg.sender,
-            submissionIndex, shareIndex, getClaimSeed( msg.sender ) ); 
-                              
+            submissionIndex, shareIndex, getClaimSeed( msg.sender ) );
+
         if( ! submissionData.readyForVerification ) {
             //ErrorLog( "there are no pending claims", 0 );
-            VerifyClaim( msg.sender, 0x84000003, 0 );            
+            VerifyClaim( msg.sender, 0x84000003, 0 );
             return;
         }
-        
+
         BlockHeader memory header = parseBlockHeader(rlpHeader);
 
         // check extra data
@@ -1141,57 +1141,57 @@ contract SmartPool is Agt, WeightedSubmission {
                                minersData[ msg.sender ].minerId,
                                submissionData.shareDifficulty ) ) {
             //ErrorLog( "extra data not as expected", uint(header.extraData) );
-            VerifyClaim( msg.sender, 0x84000004, uint(header.extraData) );            
-            return;                               
+            VerifyClaim( msg.sender, 0x84000004, uint(header.extraData) );
+            return;
         }
-        
+
         // check coinbase data
         if( header.coinbase != uint(this) ) {
             //ErrorLog( "coinbase not as expected", uint(header.coinbase) );
-            VerifyClaim( msg.sender, 0x84000005, uint(header.coinbase) );            
+            VerifyClaim( msg.sender, 0x84000005, uint(header.coinbase) );
             return;
         }
-         
-        
+
+
         // check counter
         uint counter = header.timestamp * (2 ** 64) + nonce;
         if( counter < submissionData.min ) {
             //ErrorLog( "counter is smaller than min",counter);
-            VerifyClaim( msg.sender, 0x84000007, counter );            
-            return;                         
+            VerifyClaim( msg.sender, 0x84000007, counter );
+            return;
         }
         if( counter > submissionData.max ) {
             //ErrorLog( "counter is smaller than max",counter);
-            VerifyClaim( msg.sender, 0x84000008, counter );            
-            return;                         
+            VerifyClaim( msg.sender, 0x84000008, counter );
+            return;
         }
-        
+
         // verify agt
-        uint leafHash = uint(sha3(rlpHeader));
+        uint leafHash = uint(keccak256(rlpHeader));
         VerifyAgtData memory agtData;
         agtData.rootHash = submissionData.augMerkle;
         agtData.rootMin = submissionData.min;
         agtData.rootMax = submissionData.max;
         agtData.leafHash = leafHash;
         agtData.leafCounter = counter;
-                
+
 
         if( ! verifyAgt( agtData,
                          shareIndex,
                          augCountersBranch,
                          augHashesBranch ) ) {
             //ErrorLog( "verifyAgt failed",0);
-            VerifyClaim( msg.sender, 0x84000009, 0 );            
+            VerifyClaim( msg.sender, 0x84000009, 0 );
             return;
         }
-                          
-        
+
+
         /*
         // check epoch data - done inside hashimoto
         if( ! ethashContract.isEpochDataSet( header.blockNumber / 30000 ) ) {
             //ErrorLog( "epoch data was not set",header.blockNumber / 30000);
-            VerifyClaim( msg.sender, 0x8400000a, header.blockNumber / 30000 );                        
-            return;        
+            VerifyClaim( msg.sender, 0x8400000a, header.blockNumber / 30000 );
+            return;
         }*/
 
 
@@ -1204,44 +1204,44 @@ contract SmartPool is Agt, WeightedSubmission {
         if( ethash > ((2**256-1)/submissionData.shareDifficulty )) {
             if( ethash == 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE ) {
                 //ErrorLog( "epoch data was not set",header.blockNumber / 30000);
-                VerifyClaim( msg.sender, 0x8400000a, header.blockNumber / 30000 );                                        
+                VerifyClaim( msg.sender, 0x8400000a, header.blockNumber / 30000 );
             }
             else {
                 //ErrorLog( "ethash difficulty too low",ethash);
                 VerifyClaim( msg.sender, 0x8400000b, ethash );
-            }            
-            return;        
+            }
+            return;
         }
-        
+
         if( getClaimSeed(msg.sender) == 0 ) {
             //ErrorLog( "claim seed is 0", 0 );
             VerifyClaim( msg.sender, 0x84000001, 0 );
-            return;        
+            return;
         }
-        
+
         if( ! submissionData.indicesAreValid ) {
             //ErrorLog( "share index or submission are not as expected. should be:", getShareIndex() );
             VerifyClaim( msg.sender, 0x84000002, 0 );
-            return;                
-        } 
-        
+            return;
+        }
+
         // recrusive attack is not possible as doPayment is using send and not call.
         if( ! doPayment(submissionData.totalSubmissionValue,
                         minersData[ msg.sender ].paymentAddress) ) {
             // error msg is given in doPayment function
             return;
         }
-        
+
         closeSubmission( msg.sender );
         //minersData[ msg.sender ].pendingClaim = false;
-        
-        
-        VerifyClaim( msg.sender, 0, 0 );                        
-        
-        
+
+
+        VerifyClaim( msg.sender, 0, 0 );
+
+
         return;
-    }    
-    
+    }
+
 
     // 10000 = 100%
     uint public uncleRate = 500; // 5%
@@ -1250,69 +1250,66 @@ contract SmartPool is Agt, WeightedSubmission {
 
 
     event IncomingFunds( address sender, uint amountInWei );
-    function() payable {
+    function() public payable {
         require(msg.value > 0 ); // prevent, e.g., receiving ERC223 tokens.
         IncomingFunds( msg.sender, msg.value );
     }
 
     event SetUnlceRateAndFees( address indexed sender, uint error, uint errorInfo );
-    function setUnlceRateAndFees( uint _uncleRate, uint _poolFees ) {
+    function setUnlceRateAndFees( uint _uncleRate, uint _poolFees ) public {
         if( ! owners[msg.sender] ) {
             // only owner should change rates
             SetUnlceRateAndFees( msg.sender, 0x80000000, 0 );
             return;
         }
-        
+
         uncleRate = _uncleRate;
         poolFees = _poolFees;
-        
+
         SetUnlceRateAndFees( msg.sender, 0, 0 );
     }
-        
+
     event DoPayment( address indexed sender, address paymentAddress, uint valueInWei );
     function doPayment( uint submissionValue,
                         address paymentAddress ) internal returns(bool) {
 
         uint payment = submissionValue;
         // take uncle rate into account
-        
+
         // payment = payment * (1-0.25*uncleRate)
         // uncleRate in [0,10000]
         payment = (payment * (4*10000 - uncleRate)) / (4*10000);
-        
+
         // fees
         payment = (payment * (10000 - poolFees)) / 10000;
 
         if( payment > this.balance ){
             //ErrorLog( "cannot afford to pay", calcPayment( submissionData.numShares, submissionData.difficulty ) );
-            VerifyClaim( msg.sender, 0x84000000, payment );        
+            VerifyClaim( msg.sender, 0x84000000, payment );
             return false;
         }
-                
+
         paymentAddress.transfer( payment );
-        
-        DoPayment( msg.sender, paymentAddress, payment ); 
-        
+
+        DoPayment( msg.sender, paymentAddress, payment );
+
         return true;
     }
-    
-    function getPoolBalance( ) constant returns(uint) {
+
+    function getPoolBalance( ) public constant returns(uint) {
         // debug function for testrpc
         return this.balance;
     }
 
-    event GetShareIndexDebugForTestRPCSubmissionIndex( uint index );    
+    event GetShareIndexDebugForTestRPCSubmissionIndex( uint index );
     event GetShareIndexDebugForTestRPCShareIndex( uint index );
-     
-    function getShareIndexDebugForTestRPC( address sender ) {
+
+    function getShareIndexDebugForTestRPC( address sender ) public {
         uint seed = getClaimSeed( sender );
         uint[2] memory result = calculateSubmissionIndex( sender, seed );
-        
+
         GetShareIndexDebugForTestRPCSubmissionIndex( result[0] );
-        GetShareIndexDebugForTestRPCShareIndex( result[1] );        
-            
-    }        
+        GetShareIndexDebugForTestRPCShareIndex( result[1] );
+
+    }
 }
-
-
-

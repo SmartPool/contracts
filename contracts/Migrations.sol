@@ -10,16 +10,16 @@ contract Migrations {
     if (msg.sender == owner) _;
   }
 
-  function Migrations() {
+  function Migrations() public {
     owner = msg.sender;
   }
 
   // A function with the signature `setCompleted(uint)` is required.
-  function setCompleted(uint completed) restricted {
+  function setCompleted(uint completed) public restricted {
     last_completed_migration = completed;
   }
 
-  function upgrade(address new_address) restricted {
+  function upgrade(address new_address) public restricted {
     Migrations upgraded = Migrations(new_address);
     upgraded.setCompleted(last_completed_migration);
   }
