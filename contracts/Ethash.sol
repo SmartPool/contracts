@@ -3,7 +3,7 @@ pragma solidity ^0.4.17;
 //solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol
 
 
-//import "./SHA3_512.sol";
+import "./EthashInterface.sol";
 
 contract SHA3_512 {
     function SHA3_512() public {}
@@ -217,7 +217,7 @@ contract SHA3_512 {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-contract Ethash is SHA3_512 {
+contract Ethash is SHA3_512, EthashInterface {
 
     mapping(address=>bool) public owners;
 
