@@ -1,21 +1,21 @@
-pragma solidity ^0.4.13;
+pragma solidity ^0.4.17;
 
-//solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol 
+//solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol
 
 
 //import "./SHA3_512.sol";
 
 contract SHA3_512 {
-    function SHA3_512() {}
-    
-    function keccak_f(uint[25] A) constant internal returns(uint[25]) {
+    function SHA3_512() public {}
+
+    function keccak_f(uint[25] A) pure internal returns(uint[25]) {
         uint[5] memory C;
         uint[5] memory D;
         //uint x;
         //uint y;
         //uint D_0; uint D_1; uint D_2; uint D_3; uint D_4;
         uint[25] memory B;
-        
+
         uint[24] memory RC= [
                    uint(0x0000000000000001),
                    0x0000000000008082,
@@ -41,13 +41,13 @@ contract SHA3_512 {
                    0x8000000000008080,
                    0x0000000080000001,
                    0x8000000080008008 ];
-        
+
         for( uint i = 0 ; i < 24 ; i++ ) {
             /*
             for( x = 0 ; x < 5 ; x++ ) {
-                C[x] = A[5*x]^A[5*x+1]^A[5*x+2]^A[5*x+3]^A[5*x+4];                
+                C[x] = A[5*x]^A[5*x+1]^A[5*x+2]^A[5*x+3]^A[5*x+4];
             }*/
-                       
+
             C[0]=A[0]^A[1]^A[2]^A[3]^A[4];
             C[1]=A[5]^A[6]^A[7]^A[8]^A[9];
             C[2]=A[10]^A[11]^A[12]^A[13]^A[14];
@@ -58,8 +58,8 @@ contract SHA3_512 {
             for( x = 0 ; x < 5 ; x++ ) {
                 D[x] = C[(x+4)%5]^((C[(x+1)%5] * 2)&0xffffffffffffffff | (C[(x+1)%5]/(2**63)));
             }*/
-                        
-            
+
+
             D[0]=C[4] ^ ((C[1] * 2)&0xffffffffffffffff | (C[1] / (2 ** 63)));
             D[1]=C[0] ^ ((C[2] * 2)&0xffffffffffffffff | (C[2] / (2 ** 63)));
             D[2]=C[1] ^ ((C[3] * 2)&0xffffffffffffffff | (C[3] / (2 ** 63)));
@@ -70,11 +70,11 @@ contract SHA3_512 {
             for( x = 0 ; x < 5 ; x++ ) {
                 for( y = 0 ; y < 5 ; y++ ) {
                     A[5*x+y] = A[5*x+y] ^ D[x];
-                }            
+                }
             }*/
-            
 
-            
+
+
             A[0]=A[0] ^ D[0];
             A[1]=A[1] ^ D[0];
             A[2]=A[2] ^ D[0];
@@ -101,7 +101,7 @@ contract SHA3_512 {
             A[23]=A[23] ^ D[4];
             A[24]=A[24] ^ D[4];
 
-            /*Rho and pi steps*/            
+            /*Rho and pi steps*/
             B[0]=A[0];
             B[8]=((A[1] * (2 ** 36))&0xffffffffffffffff | (A[1] / (2 ** 28)));
             B[11]=((A[2] * (2 ** 3))&0xffffffffffffffff | (A[2] / (2 ** 61)));
@@ -135,8 +135,8 @@ contract SHA3_512 {
                     A[5*x+y] = B[5*x+y]^((~B[5*((x+1)%5)+y]) & B[5*((x+2)%5)+y]);
                 }
             }*/
-            
-            
+
+
             A[0]=B[0]^((~B[5]) & B[10]);
             A[1]=B[1]^((~B[6]) & B[11]);
             A[2]=B[2]^((~B[7]) & B[12]);
@@ -164,23 +164,23 @@ contract SHA3_512 {
             A[24]=B[24]^((~B[4]) & B[9]);
 
             /*Last step*/
-            A[0]=A[0]^RC[i];            
+            A[0]=A[0]^RC[i];
         }
 
-        
+
         return A;
     }
- 
-    
-    function sponge(uint[9] M) constant internal returns(uint[16]) {
+
+
+    function sponge(uint[9] M) pure internal returns(uint[16]) {
         require( (M.length * 8) == 72 );
         M[5] = 0x01;
         M[8] = 0x8000000000000000;
-        
+
         uint r = 72;
         uint w = 8;
         uint size = M.length * 8;
-        
+
         uint[25] memory S;
         uint i; uint y; uint x;
         /*Absorbing Phase*/
@@ -202,14 +202,14 @@ contract SHA3_512 {
             for( y = 0 ; y < 5 ; y++ ) {
                 for( x = 0 ; x < 5 ; x++ ) {
                     if( (x+5*y)<(r/w) && (b<16) ) {
-                        result[b] = S[5*x+y] & 0xFFFFFFFF; 
+                        result[b] = S[5*x+y] & 0xFFFFFFFF;
                         result[b+1] = S[5*x+y] / 0x100000000;
                         b+=2;
                     }
                 }
             }
         }
-         
+
         return result;
    }
 
@@ -218,16 +218,16 @@ contract SHA3_512 {
 ////////////////////////////////////////////////////////////////////////////////
 
 contract Ethash is SHA3_512 {
-    
+
     mapping(address=>bool) public owners;
-    
-    function Ethash(address[3] _owners) {
+
+    function Ethash(address[3] _owners) public {
         owners[_owners[0]] = true;
         owners[_owners[1]] = true;
-        owners[_owners[2]] = true;                
+        owners[_owners[2]] = true;
     }
-     
-    function fnv( uint v1, uint v2 ) constant internal returns(uint) {
+
+    function fnv( uint v1, uint v2 ) pure internal returns(uint) {
         return ((v1*0x01000193) ^ v2) & 0xFFFFFFFF;
     }
 
@@ -237,21 +237,21 @@ contract Ethash is SHA3_512 {
                                uint indexInElementsArray,
                                uint[] elements,
                                uint[] witness,
-                               uint branchSize ) constant private returns(uint) {
- 
+                               uint branchSize ) pure private returns(uint) {
+
         uint leaf = computeLeaf(elements, indexInElementsArray) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
         uint left;
         uint right;
         uint node;
         bool oddBranchSize = (branchSize % 2) > 0;
-                          
+
         assembly {
             branchSize := div(branchSize,2)
             //branchSize /= 2;
         }
         uint witnessIndex = indexInElementsArray * branchSize;
-        if( oddBranchSize ) witnessIndex += indexInElementsArray;  
+        if( oddBranchSize ) witnessIndex += indexInElementsArray;
 
         for( uint depth = 0 ; depth < branchSize ; depth++ ) {
             assembly {
@@ -261,10 +261,10 @@ contract Ethash is SHA3_512 {
             if( index & 0x1 == 0 ) {
                 left = leaf;
                 assembly{
-                    //right = node & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;                
+                    //right = node & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
                     right := and(node,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
                 }
-                
+
             }
             else {
                 assembly{
@@ -273,10 +273,10 @@ contract Ethash is SHA3_512 {
                 }
                 right = leaf;
             }
-            
-            leaf = uint(sha3(left,right)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
+            leaf = uint(keccak256(left,right)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
             assembly {
-                index := div(index,2) 
+                index := div(index,2)
             }
             //index = index / 2;
 
@@ -295,85 +295,85 @@ contract Ethash is SHA3_512 {
                 }
                 right = leaf;
             }
-            
-            leaf = uint(sha3(left,right)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+
+            leaf = uint(keccak256(left,right)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
             assembly {
-                index := div(index,2) 
+                index := div(index,2)
             }
             //index = index / 2;
         }
-        
+
         if( oddBranchSize ) {
             assembly {
                 node := mload(add(add(witness,0x20),mul(add(depth,witnessIndex),0x20)))
             }
-        
+
             //node  = witness[witnessIndex + depth] & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
             if( index & 0x1 == 0 ) {
                 left = leaf;
                 assembly{
-                    //right = node & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;                
+                    //right = node & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
                     right := and(node,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
-                }                
+                }
             }
             else {
                 assembly{
-                    //left = node & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;                
+                    //left = node & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
                     left := and(node,0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)
                 }
-            
+
                 right = leaf;
             }
-            
-            leaf = uint(sha3(left,right)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;        
+
+            leaf = uint(keccak256(left,right)) & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         }
-        
-        
+
+
         return leaf;
     }
 
-    
-    function toBE( uint x ) constant internal returns(uint) {
+
+    function toBE( uint x ) pure internal returns(uint) {
         uint y = 0;
         for( uint i = 0 ; i < 32 ; i++ ) {
             y = y * 256;
             y += (x & 0xFF);
-            x = x / 256;            
+            x = x / 256;
         }
-        
+
         return y;
-        
+
     }
-    
-    function computeSha3( uint[16] s, uint[8] cmix ) constant internal returns(uint) {
+
+    function computeSha3( uint[16] s, uint[8] cmix ) pure internal returns(uint) {
         uint s0 = s[0] + s[1] * (2**32) + s[2] * (2**64) + s[3] * (2**96) +
                   (s[4] + s[5] * (2**32) + s[6] * (2**64) + s[7] * (2**96))*(2**128);
 
         uint s1 = s[8] + s[9] * (2**32) + s[10] * (2**64) + s[11] * (2**96) +
                   (s[12] + s[13] * (2**32) + s[14] * (2**64) + s[15] * (2**96))*(2**128);
-                  
+
         uint c = cmix[0] + cmix[1] * (2**32) + cmix[2] * (2**64) + cmix[3] * (2**96) +
                   (cmix[4] + cmix[5] * (2**32) + cmix[6] * (2**64) + cmix[7] * (2**96))*(2**128);
 
-        
+
         /* god knows why need to convert to big endian */
-        return uint( sha3(toBE(s0),toBE(s1),toBE(c)) );
+        return uint( keccak256(toBE(s0),toBE(s1),toBE(c)) );
     }
- 
- 
-    function computeLeaf( uint[] dataSetLookup, uint index ) constant internal returns(uint) {
-        return uint( sha3(dataSetLookup[4*index],
+
+
+    function computeLeaf( uint[] dataSetLookup, uint index ) pure internal returns(uint) {
+        return uint( keccak256(dataSetLookup[4*index],
                           dataSetLookup[4*index + 1],
                           dataSetLookup[4*index + 2],
                           dataSetLookup[4*index + 3]) );
-                                    
+
     }
- 
-    function computeS( uint header, uint nonceLe ) constant internal returns(uint[16]) {
+
+    function computeS( uint header, uint nonceLe ) pure internal returns(uint[16]) {
         uint[9]  memory M;
-        
+
         header = reverseBytes(header);
-        
+
         M[0] = uint(header) & 0xFFFFFFFFFFFFFFFF;
         header = header / 2**64;
         M[1] = uint(header) & 0xFFFFFFFFFFFFFFFF;
@@ -386,73 +386,73 @@ contract Ethash is SHA3_512 {
         M[4] = nonceLe;
         return sponge(M);
     }
-    
-    function reverseBytes( uint input ) constant internal returns(uint) {
+
+    function reverseBytes( uint input ) pure internal returns(uint) {
         uint result = 0;
         for(uint i = 0 ; i < 32 ; i++ ) {
             result = result * 256;
             result += input & 0xff;
-            
+
             input /= 256;
         }
-        
+
         return result;
     }
-    
+
     struct EthashCacheOptData {
         uint[512]         merkleNodes;
         uint              fullSizeIn128Resultion;
         uint              branchDepth;
     }
-    
+
     mapping(uint=>EthashCacheOptData) epochData;
-    
-    function getEpochData( uint epochIndex, uint nodeIndex ) constant returns(uint[3]) {
+
+    function getEpochData( uint epochIndex, uint nodeIndex ) public constant returns(uint[3]) {
         return [epochData[epochIndex].merkleNodes[nodeIndex],
                 epochData[epochIndex].fullSizeIn128Resultion,
                 epochData[epochIndex].branchDepth];
     }
-    
-    function isEpochDataSet( uint epochIndex ) constant returns(bool) {
+
+    function isEpochDataSet( uint epochIndex ) public constant returns(bool) {
         return epochData[epochIndex].fullSizeIn128Resultion != 0;
-    
+
     }
-        
-    event SetEpochData( address indexed sender, uint error, uint errorInfo );    
+
+    event SetEpochData( address indexed sender, uint error, uint errorInfo );
     function setEpochData( uint epoch,
                            uint fullSizeIn128Resultion,
                            uint branchDepth,
                            uint[] merkleNodes,
                            uint start,
-                           uint numElems ) {
+                           uint numElems ) public {
 
         if( ! owners[msg.sender] ) {
             //ErrorLog( "setEpochData: only owner can set data", uint(msg.sender) );
             SetEpochData( msg.sender, 0x82000000, uint(msg.sender) );
-            return;        
-        }                           
-                           
+            return;
+        }
+
         for( uint i = 0 ; i < numElems ; i++ ) {
             if( epochData[epoch].merkleNodes[start+i] > 0 ) {
                 //ErrorLog("epoch already set", epoch[i]);
                 SetEpochData( msg.sender, 0x82000001, epoch * (2**128) + start + i );
-                return;            
+                return;
 
-            } 
+            }
             epochData[epoch].merkleNodes[start+i] = merkleNodes[i];
         }
         epochData[epoch].fullSizeIn128Resultion = fullSizeIn128Resultion;
         epochData[epoch].branchDepth = branchDepth;
-        
-        SetEpochData( msg.sender, 0 , 0 );        
+
+        SetEpochData( msg.sender, 0 , 0 );
     }
 
-    function getMerkleLeave( uint epochIndex, uint p ) constant internal returns(uint) {        
+    function getMerkleLeave( uint epochIndex, uint p ) constant internal returns(uint) {
         uint rootIndex = p >> epochData[epochIndex].branchDepth;
         uint expectedRoot = epochData[epochIndex].merkleNodes[(rootIndex/2)];
         if( (rootIndex % 2) == 0 ) expectedRoot = expectedRoot & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         else expectedRoot = expectedRoot / (2**128);
-        
+
         return expectedRoot;
     }
 
@@ -461,47 +461,47 @@ contract Ethash is SHA3_512 {
                         bytes8       nonceLe,
                         uint[]       dataSetLookup,
                         uint[]       witnessForLookup,
-                        uint         epochIndex ) constant returns(uint) {
-         
+                        uint         epochIndex ) public constant returns(uint) {
+
         uint[16] memory s;
         uint[32] memory mix;
         uint[8]  memory cmix;
-        
-        uint[2]  memory depthAndFullSize = [epochData[epochIndex].branchDepth, 
+
+        uint[2]  memory depthAndFullSize = [epochData[epochIndex].branchDepth,
                                             epochData[epochIndex].fullSizeIn128Resultion];
-                
+
         uint i;
         uint j;
-        
+
         if( ! isEpochDataSet( epochIndex ) ) return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFE;
-        
+
         if( depthAndFullSize[1] == 0 ) {
             return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
         }
 
-        
+
         s = computeS(uint(header), uint(nonceLe));
-        for( i = 0 ; i < 16 ; i++ ) {            
+        for( i = 0 ; i < 16 ; i++ ) {
             assembly {
                 let offset := mul(i,0x20)
-                
+
                 //mix[i] = s[i];
                 mstore(add(mix,offset),mload(add(s,offset)))
-                
+
                 // mix[i+16] = s[i];
-                mstore(add(mix,add(0x200,offset)),mload(add(s,offset)))    
+                mstore(add(mix,add(0x200,offset)),mload(add(s,offset)))
             }
         }
 
         for( i = 0 ; i < 64 ; i++ ) {
             uint p = fnv( i ^ s[0], mix[i % 32]) % depthAndFullSize[1];
-            
-            
+
+
             if( computeCacheRoot( p, i, dataSetLookup,  witnessForLookup, depthAndFullSize[0] )  != getMerkleLeave( epochIndex, p ) ) {
-            
+
                 // PoW failed
                 return 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
-            }       
+            }
 
             for( j = 0 ; j < 8 ; j++ ) {
 
@@ -509,91 +509,90 @@ contract Ethash is SHA3_512 {
                     //mix[j] = fnv(mix[j], dataSetLookup[4*i] & varFFFFFFFF );
                     let dataOffset := add(mul(0x80,i),add(dataSetLookup,0x20))
                     let dataValue   := and(mload(dataOffset),0xFFFFFFFF)
-                    
+
                     let mixOffset := add(mix,mul(0x20,j))
                     let mixValue  := mload(mixOffset)
-                    
+
                     // fnv = return ((v1*0x01000193) ^ v2) & 0xFFFFFFFF;
-                    let fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)                    
+                    let fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)
                     mstore(mixOffset,fnvValue)
-                    
+
                     //mix[j+8] = fnv(mix[j+8], dataSetLookup[4*i + 1] & 0xFFFFFFFF );
                     dataOffset := add(dataOffset,0x20)
                     dataValue   := and(mload(dataOffset),0xFFFFFFFF)
-                    
+
                     mixOffset := add(mixOffset,0x100)
                     mixValue  := mload(mixOffset)
-                    
+
                     // fnv = return ((v1*0x01000193) ^ v2) & 0xFFFFFFFF;
-                    fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)                    
+                    fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)
                     mstore(mixOffset,fnvValue)
 
                     //mix[j+16] = fnv(mix[j+16], dataSetLookup[4*i + 2] & 0xFFFFFFFF );
                     dataOffset := add(dataOffset,0x20)
                     dataValue   := and(mload(dataOffset),0xFFFFFFFF)
-                    
+
                     mixOffset := add(mixOffset,0x100)
                     mixValue  := mload(mixOffset)
-                    
+
                     // fnv = return ((v1*0x01000193) ^ v2) & 0xFFFFFFFF;
-                    fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)                    
+                    fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)
                     mstore(mixOffset,fnvValue)
 
                     //mix[j+24] = fnv(mix[j+24], dataSetLookup[4*i + 3] & 0xFFFFFFFF );
                     dataOffset := add(dataOffset,0x20)
                     dataValue   := and(mload(dataOffset),0xFFFFFFFF)
-                    
+
                     mixOffset := add(mixOffset,0x100)
                     mixValue  := mload(mixOffset)
-                    
+
                     // fnv = return ((v1*0x01000193) ^ v2) & 0xFFFFFFFF;
-                    fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)                    
-                    mstore(mixOffset,fnvValue)                    
-                                        
+                    fnvValue := and(xor(mul(mixValue,0x01000193),dataValue),0xFFFFFFFF)
+                    mstore(mixOffset,fnvValue)
+
                 }
 
-                
+
                 //mix[j] = fnv(mix[j], dataSetLookup[4*i] & 0xFFFFFFFF );
                 //mix[j+8] = fnv(mix[j+8], dataSetLookup[4*i + 1] & 0xFFFFFFFF );
-                //mix[j+16] = fnv(mix[j+16], dataSetLookup[4*i + 2] & 0xFFFFFFFF );                
+                //mix[j+16] = fnv(mix[j+16], dataSetLookup[4*i + 2] & 0xFFFFFFFF );
                 //mix[j+24] = fnv(mix[j+24], dataSetLookup[4*i + 3] & 0xFFFFFFFF );
-                
-                
+
+
                 //dataSetLookup[4*i    ] = dataSetLookup[4*i    ]/(2**32);
                 //dataSetLookup[4*i + 1] = dataSetLookup[4*i + 1]/(2**32);
                 //dataSetLookup[4*i + 2] = dataSetLookup[4*i + 2]/(2**32);
-                //dataSetLookup[4*i + 3] = dataSetLookup[4*i + 3]/(2**32);                
-                
+                //dataSetLookup[4*i + 3] = dataSetLookup[4*i + 3]/(2**32);
+
                 assembly{
                     let offset := add(add(dataSetLookup,0x20),mul(i,0x80))
                     let value  := div(mload(offset),0x100000000)
                     mstore(offset,value)
-                                       
+
                     offset := add(offset,0x20)
                     value  := div(mload(offset),0x100000000)
                     mstore(offset,value)
-                    
+
                     offset := add(offset,0x20)
                     value  := div(mload(offset),0x100000000)
-                    mstore(offset,value)                    
-                    
+                    mstore(offset,value)
+
                     offset := add(offset,0x20)
                     value  := div(mload(offset),0x100000000)
-                    mstore(offset,value)                                                                                
-                }                
+                    mstore(offset,value)
+                }
             }
         }
-        
-        
+
+
         for( i = 0 ; i < 32 ; i += 4) {
             cmix[i/4] = (fnv(fnv(fnv(mix[i], mix[i+1]), mix[i+2]), mix[i+3]));
         }
-        
 
-        uint result = computeSha3(s,cmix); 
+
+        uint result = computeSha3(s,cmix);
 
         return result;
-        
+
     }
 }
-
