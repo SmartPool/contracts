@@ -3,7 +3,7 @@ pragma solidity ^0.4.17;
 //solc --bin --abi --optimize  --optimize-runs 20000 -o . Testpool.sol
 
 
-import "./Ethash.sol";
+import "./EthashInterface.sol";
 
 /**
 * @title RLPReader
@@ -855,7 +855,7 @@ contract WeightedSubmission {
 contract SmartPool is Agt, WeightedSubmission {
     string  public version = "0.1.1";
 
-    Ethash  public ethashContract;
+    EthashInterface  public ethashContract;
     address public withdrawalAddress;
     mapping(address=>bool) public owners;
 
@@ -875,7 +875,7 @@ contract SmartPool is Agt, WeightedSubmission {
     mapping(address=>bool) blackList;
 
     function SmartPool( address[] _owners,
-                        Ethash _ethashContract,
+                        EthashInterface _ethashContract,
                         address _withdrawalAddress,
                         bool _whiteListEnabled,
                         bool _blackListEnabled ) public payable {
