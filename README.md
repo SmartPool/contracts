@@ -30,7 +30,7 @@ cd ..
 ```
 cp settings.js-sample settings.js
 ```
-and edit the file so it has your owner and withdrawal address in it.  If you need to change the account to fund things, it should also be changed in this file.
+and edit the file so it has your owner and withdrawal address in it.  If you need to change the account to fund things, it should also be changed in this file.  You can also change the required version of the client in this file.
 
 ### Deploy the Ethash contract:
 ```
@@ -84,11 +84,8 @@ Then in the geth terminal:
 ```javascript
 var g = load_smartpoolversion();
 g.contract.updatePoolContract(sAddr, {from: funding[0]})
-var ver=String.fromCharCode.apply(null, [0, 4, 0]);
-g.contract.updateClientVersion(ver, {from: funding[0]})
+g.contract.updateClientVersion(version, {from: funding[0]})
 ```
-
-`[0,4,0]` is the required version number for smart pool (0.4.0 in this case).
 
 Provide initial funds to the pool:
 ```
