@@ -8,7 +8,7 @@ wAddr="";
 
 var version=String.fromCharCode.apply(null, [0, 4, 0]);
 
-etHash = "";
+ethashAddr = "";
 sAddr = "";
 gateAddr = "";
 
