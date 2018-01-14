@@ -1,0 +1,14 @@
+// SmartPool Deploy settings.
+
+funding = [eth.accounts[0], 4500000];
+o1="";
+o2="";
+o3="";
+wAddr="";
+
+var version=String.fromCharCode.apply(null, [0, 4, 0]);
+
+ethashAddr = "";
+sAddr = "";
+gateAddr = "";
+

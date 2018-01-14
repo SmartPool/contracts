@@ -1,2 +1,6 @@
 *~
 node_modules/
+settings.js
+contracts/Ethash.js
+contracts/SmartPool.js
+contracts/SmartpoolVersion.js
